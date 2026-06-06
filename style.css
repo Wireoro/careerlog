@@ -1,0 +1,369 @@
+/* ── Reset & base ───────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;
+  background:#FAF7F2;
+  color:#2C2520;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+.mono{font-family:'SF Mono','Menlo','Monaco','Courier New',monospace}
+.sans{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif}
+
+/* ── Layout ─────────────────────────────────────────────── */
+#app{
+  display:grid;
+  grid-template-columns:220px 1fr;
+  min-height:100vh;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+.sidebar{
+  background:#fff;
+  border-right:1px solid #DDD5C8;
+  padding:32px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:28px;
+  position:sticky;
+  top:0;
+  height:100vh;
+}
+
+.logo{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  padding:0 8px;
+}
+.logo h1{font-size:22px;font-weight:400;color:#2C2520;letter-spacing:-0.01em}
+.logo h1 em{font-style:italic;color:#C4654A}
+.logo-sub{font-family:'SF Mono','Menlo',monospace;font-size:10px;color:#A09688;letter-spacing:0.04em;padding:0 8px}
+
+.nav-links{list-style:none;display:flex;flex-direction:column;gap:2px}
+
+.nav-btn{
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 12px;
+  border:none;
+  border-radius:8px;
+  background:transparent;
+  color:#8A8178;
+  font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+  font-size:14px;
+  cursor:pointer;
+  text-align:left;
+  transition:background 0.12s,color 0.12s;
+}
+.nav-btn:hover{background:#FAF7F2;color:#2C2520}
+.nav-btn.active{background:rgba(196,101,74,0.08);color:#C4654A;font-style:italic}
+.nav-btn .ti{font-size:16px}
+
+/* ── Main ────────────────────────────────────────────────── */
+.main{
+  padding:32px 40px 80px;
+  max-width:860px;
+}
+
+/* ── Tab sections ────────────────────────────────────────── */
+.tab-section{display:none}
+.tab-section.active{display:block}
+
+/* ── Page header ─────────────────────────────────────────── */
+.page-header{margin-bottom:24px}
+.page-header h1{font-size:28px;font-weight:400;color:#2C2520;letter-spacing:-0.01em}
+.page-header h1 em{font-style:italic;color:#C4654A}
+.page-header p{font-size:13px;color:#8A8178;margin-top:4px;font-family:-apple-system,sans-serif}
+
+/* ── Stats bar ───────────────────────────────────────────── */
+.stats-bar{
+  display:flex;
+  gap:0;
+  margin-bottom:28px;
+  border:1px solid #DDD5C8;
+  border-radius:12px;
+  overflow:hidden;
+  background:#fff;
+}
+.stat{flex:1;padding:16px 20px;border-right:1px solid #EDE8E0;text-align:center}
+.stat:last-child{border-right:none}
+.stat-val{font-size:26px;font-weight:300;color:#C4654A;display:block;letter-spacing:-0.02em}
+.stat-label{font-family:-apple-system,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#A09688;margin-top:2px;display:block}
+
+/* ── Form card ───────────────────────────────────────────── */
+.form-card{
+  background:#fff;
+  border:1px solid #EDE8E0;
+  border-radius:12px;
+  padding:24px;
+}
+
+.form-group{margin-bottom:18px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+
+label{
+  display:block;
+  font-family:'SF Mono','Menlo',monospace;
+  font-size:9px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:#A09688;
+  margin-bottom:7px;
+}
+label .muted{color:#C4B8AC}
+
+input[type="text"],
+input[type="date"],
+textarea,
+select{
+  width:100%;
+  padding:9px 13px;
+  border:1px solid #DDD5C8;
+  border-radius:8px;
+  background:#FAF7F2;
+  color:#2C2520;
+  font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+  font-size:14px;
+  outline:none;
+  transition:border-color 0.15s,background 0.15s;
+}
+input:focus,textarea:focus{border-color:#C4654A;background:#fff}
+textarea{min-height:110px;resize:vertical;line-height:1.6}
+
+/* ── Category pills ──────────────────────────────────────── */
+.category-grid{display:flex;gap:6px;flex-wrap:wrap}
+
+.cat-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 16px;
+  border-radius:20px;
+  border:1px solid #DDD5C8;
+  background:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:11px;
+  color:#6B6560;
+  cursor:pointer;
+  transition:all 0.15s;
+  user-select:none;
+}
+.cat-btn:hover{border-color:#C4654A;color:#C4654A}
+.cat-btn .ti{font-size:13px}
+
+.cat-btn.selected[data-cat="win"]      {background:#C4654A;border-color:#C4654A;color:#fff}
+.cat-btn.selected[data-cat="metric"]   {background:#5B7B8A;border-color:#5B7B8A;color:#fff}
+.cat-btn.selected[data-cat="feedback"] {background:#8B6BAE;border-color:#8B6BAE;color:#fff}
+.cat-btn.selected[data-cat="decision"] {background:#6B8F71;border-color:#6B8F71;color:#fff}
+.cat-btn.selected[data-cat="lesson"]   {background:#C4A46C;border-color:#C4A46C;color:#fff}
+.cat-btn.selected[data-cat="challenge"]{background:#A09688;border-color:#A09688;color:#fff}
+
+/* ── Impact dots ─────────────────────────────────────────── */
+.impact-row{display:flex;gap:8px}
+.impact-dot{
+  width:34px;height:34px;
+  border-radius:50%;
+  border:1px solid #DDD5C8;
+  background:#FAF7F2;
+  color:#8A8178;
+  font-family:'SF Mono',monospace;
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.12s;
+}
+.impact-dot:hover{border-color:#C4654A;color:#C4654A}
+.impact-dot.selected{background:#C4654A;border-color:#C4654A;color:#fff}
+.impact-label{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;margin-top:5px;letter-spacing:0.02em}
+
+/* ── Tags input ──────────────────────────────────────────── */
+.tags-input{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border:1px solid #DDD5C8;
+  border-radius:8px;
+  background:#FAF7F2;
+  cursor:text;
+  min-height:40px;
+  transition:border-color 0.15s;
+}
+.tags-input:focus-within{border-color:#C4654A;background:#fff}
+.tags-input input{
+  border:none;background:transparent;outline:none;padding:0;
+  min-width:100px;flex:1;
+  font-family:'Iowan Old Style',Palatino,Georgia,serif;
+  font-size:13px;color:#2C2520;
+}
+
+.tag-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 10px;
+  background:#EDE8E0;
+  border-radius:20px;
+  font-family:-apple-system,sans-serif;font-size:11px;color:#6B6560;
+}
+.tag-pill button{
+  background:none;border:none;cursor:pointer;
+  color:#A09688;font-size:15px;line-height:1;padding:0;
+}
+.tag-pill button:hover{color:#2C2520}
+
+/* ── Submit button ───────────────────────────────────────── */
+.submit-btn{
+  width:100%;
+  padding:12px;
+  margin-top:4px;
+  background:#2C2520;
+  color:#FAF7F2;
+  border:none;
+  border-radius:8px;
+  font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+  font-size:15px;
+  font-style:italic;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:opacity 0.15s;
+}
+.submit-btn:hover{opacity:0.82}
+.submit-btn:disabled{opacity:0.4;cursor:not-allowed}
+.submit-btn .ti{font-size:17px;font-style:normal}
+
+/* ── Loading dots ────────────────────────────────────────── */
+.loading-row{display:flex;align-items:center;gap:5px;padding:1rem 0}
+.loading-text{font-family:'SF Mono',monospace;font-size:11px;color:#A09688;margin-left:6px;letter-spacing:0.02em}
+.dot{width:5px;height:5px;border-radius:50%;background:#C4B8AC;animation:pulse 1.2s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:0.2s}
+.dot:nth-child(3){animation-delay:0.4s}
+@keyframes pulse{0%,60%,100%{transform:scale(0.8);opacity:0.4}30%{transform:scale(1.2);opacity:1}}
+
+/* ── Write result ────────────────────────────────────────── */
+#write-result{margin-top:1.25rem}
+.result-banner{
+  border-left:3px solid #C4654A;
+  padding-left:1rem;
+  margin-bottom:1.25rem;
+}
+.result-saved{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px}
+.result-summary{font-size:15px;color:#2C2520;line-height:1.5;margin-bottom:1rem}
+
+/* ── Insight cards ───────────────────────────────────────── */
+.insight-card{
+  background:#FAF7F2;
+  border:1px solid #EDE8E0;
+  border-radius:10px;
+  padding:14px 16px;
+  margin-bottom:10px;
+}
+.insight-label{
+  font-family:'SF Mono','Menlo',monospace;
+  font-size:9px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:#A09688;
+  padding-bottom:6px;
+  border-bottom:1px solid #EDE8E0;
+  margin-bottom:8px;
+}
+.insight-body{font-size:14px;color:#2C2520;line-height:1.65}
+.insight-mono{font-family:'SF Mono',monospace;font-size:12px;color:#2C2520}
+
+/* ── Entry cards ─────────────────────────────────────────── */
+.entry-card{
+  background:#fff;
+  border:1px solid #EDE8E0;
+  border-radius:12px;
+  padding:18px 20px;
+  margin-bottom:10px;
+  cursor:default;
+  transition:border-color 0.2s;
+  position:relative;
+  overflow:hidden;
+}
+.entry-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;
+}
+.entry-card[data-cat="win"]::before      {background:#C4654A}
+.entry-card[data-cat="metric"]::before   {background:#5B7B8A}
+.entry-card[data-cat="feedback"]::before {background:#8B6BAE}
+.entry-card[data-cat="decision"]::before {background:#6B8F71}
+.entry-card[data-cat="lesson"]::before   {background:#C4A46C}
+.entry-card[data-cat="challenge"]::before{background:#A09688}
+.entry-card:hover{border-color:#C4654A}
+
+.entry-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
+.entry-title{font-size:14px;color:#2C2520;line-height:1.45}
+.entry-snippet{font-size:13px;color:#8A8178;line-height:1.5;font-family:-apple-system,sans-serif}
+.entry-meta{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;margin-top:8px}
+
+.badge{
+  font-family:'SF Mono',monospace;
+  font-size:9px;
+  font-weight:600;
+  padding:3px 8px;
+  border-radius:4px;
+  flex-shrink:0;
+  white-space:nowrap;
+}
+
+/* badge colours per category */
+.badge-win      {background:#FAEAE6;color:#C4654A}
+.badge-metric   {background:#E8F0F3;color:#5B7B8A}
+.badge-feedback {background:#F0EBF5;color:#8B6BAE}
+.badge-decision {background:#E8F2EA;color:#6B8F71}
+.badge-lesson   {background:#F5F0E4;color:#C4A46C}
+.badge-challenge{background:#F0EEEB;color:#A09688}
+
+/* ── Insights page ───────────────────────────────────────── */
+.insights-header{font-family:'SF Mono',monospace;font-size:11px;color:#A09688;margin-bottom:20px;letter-spacing:0.03em}
+.insight-card.highlight{border-color:#C4654A;border-width:1px}
+.skill-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.skill-pill{
+  display:inline-flex;
+  padding:4px 12px;
+  background:rgba(196,101,74,0.08);
+  border:1px solid rgba(196,101,74,0.2);
+  border-radius:20px;
+  font-family:-apple-system,sans-serif;
+  font-size:11px;
+  color:#C4654A;
+}
+
+/* ── Toast ───────────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:24px;right:24px;
+  background:#2C2520;color:#FAF7F2;
+  padding:10px 16px;border-radius:8px;
+  font-family:'SF Mono',monospace;font-size:12px;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.25s;z-index:100;
+}
+.toast.show{opacity:1}
+
+/* ── Empty state ─────────────────────────────────────────── */
+.empty-state{
+  text-align:center;padding:80px 20px;
+  color:#A09688;font-size:14px;
+  font-family:-apple-system,sans-serif;
+}
+.empty-state .ti{font-size:36px;display:block;margin-bottom:10px;opacity:0.3}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media(max-width:640px){
+  #app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;flex-direction:row;align-items:center;padding:1rem 1.25rem;gap:1rem}
+  .logo{flex:1}
+  .logo-sub{display:none}
+  .nav-links{flex-direction:row}
+  .main{padding:1.25rem 1rem 4rem}
+  .form-row{grid-template-columns:1fr}
+  .stats-bar{flex-wrap:wrap}
+  .stat{min-width:50%}
+}

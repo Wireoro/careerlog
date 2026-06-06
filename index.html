@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CareerLog</title>
+  <link rel="stylesheet" href="src/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono&display=swap" rel="stylesheet" />
+
+  <!--
+    env.js is generated locally by running: node generate-env.js
+    It is gitignored and never committed.
+    On Netlify/Vercel, environment variables are injected at build time instead.
+  -->
+  <script src="/env.js"></script>
+</head>
+<body>
+
+<div id="app">
+
+  <nav class="sidebar">
+    <div>
+      <div class="logo">
+        <h1>Career<em>Log</em></h1>
+      </div>
+      <div class="logo-sub">your track record</div>
+    </div>
+    <ul class="nav-links">
+      <li><button class="nav-btn active" data-tab="write"><i class="ti ti-edit"></i> Write</button></li>
+      <li><button class="nav-btn" data-tab="entries"><i class="ti ti-list"></i> Entries</button></li>
+      <li><button class="nav-btn" data-tab="insights"><i class="ti ti-sparkles"></i> Insights</button></li>
+    </ul>
+  </nav>
+
+  <main class="main">
+
+    <section id="write" class="tab-section active">
+      <div class="page-header">
+        <h1>New <em>Entry</em></h1>
+        <p class="sans">What happened today worth remembering?</p>
+      </div>
+      <div class="form-card">
+        <div class="form-group">
+          <label>Category</label>
+          <div class="category-grid">
+            <button class="cat-btn selected" data-cat="win"><i class="ti ti-trophy"></i> Win</button>
+            <button class="cat-btn" data-cat="metric"><i class="ti ti-chart-bar"></i> Metric</button>
+            <button class="cat-btn" data-cat="feedback"><i class="ti ti-message"></i> Feedback</button>
+            <button class="cat-btn" data-cat="decision"><i class="ti ti-sitemap"></i> Decision</button>
+            <button class="cat-btn" data-cat="lesson"><i class="ti ti-bulb"></i> Lesson</button>
+            <button class="cat-btn" data-cat="challenge"><i class="ti ti-flame"></i> Challenge</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="entry-title">Title</label>
+          <input type="text" id="entry-title" placeholder="e.g. Shipped the new checkout flow 2 weeks early" />
+        </div>
+        <div class="form-group">
+          <label for="entry-content">What happened? <span class="muted">— be specific, include numbers</span></label>
+          <textarea id="entry-content" placeholder="Describe the situation, what you did, and the result. Numbers and metrics make this powerful later: 'reduced load time by 40%', 'onboarded 3 enterprise clients worth $200k'..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Impact level</label>
+            <div class="impact-row" id="impact-row">
+              <button class="impact-dot" data-val="1">1</button>
+              <button class="impact-dot" data-val="2">2</button>
+              <button class="impact-dot selected" data-val="3">3</button>
+              <button class="impact-dot" data-val="4">4</button>
+              <button class="impact-dot" data-val="5">5</button>
+            </div>
+            <p class="impact-label" id="impact-label">Medium impact</p>
+          </div>
+          <div class="form-group">
+            <label for="entry-date">Date</label>
+            <input type="date" id="entry-date" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Tags <span class="muted">— press Enter to add</span></label>
+          <div class="tags-input" id="tags-container">
+            <input type="text" id="tag-input" placeholder="leadership, product, backend…" />
+          </div>
+        </div>
+        <button class="submit-btn" id="submit-btn">
+          <i class="ti ti-send"></i> Save entry &amp; generate insights
+        </button>
+        <div class="loading-row" id="write-loading" style="display:none;">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="loading-text">Saving and generating AI insights…</span>
+        </div>
+        <div id="write-result"></div>
+      </div>
+    </section>
+
+    <section id="entries" class="tab-section">
+      <div class="page-header">
+        <h1>All <em>Entries</em></h1>
+        <p class="sans">Your career record, one entry at a time.</p>
+      </div>
+      <div class="loading-row" id="entries-loading" style="display:none;">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="loading-text">Loading entries…</span>
+      </div>
+      <div class="stats-bar" id="entries-stats" style="display:none;"></div>
+      <div id="entries-list"></div>
+    </section>
+
+    <section id="insights" class="tab-section">
+      <div class="page-header">
+        <h1>Career <em>Insights</em></h1>
+        <p class="sans">AI analysis of your full track record.</p>
+      </div>
+      <div class="loading-row" id="insights-loading" style="display:none;">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="loading-text">Generating career insights…</span>
+      </div>
+      <div id="insights-content"></div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ES module so app.js can use import/export -->
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
