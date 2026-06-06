@@ -5,7 +5,117 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CareerLog</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+// ── Mood tab ──────────────────────────────────────────────
+const ENERGY_DESCS      = {1:'Exhausted — running on empty',2:'Low — struggling to focus',3:'Steady — getting through the week',4:'Good — feeling sharp and motivated',5:'Excellent — firing on all cylinders'};
+const SATISFACTION_DESCS= {1:'Very unhappy — something needs to change',2:'Unsatisfied — more bad than good',3:'Neutral — neither thriving nor struggling',4:'Satisfied — feeling good about progress',5:'Very satisfied — this is a great week'};
+const STRESS_DESCS      = {1:'Very calm — barely any pressure',2:'Light — comfortably in control',3:'Manageable — normal background pressure',4:'High — feeling the strain',5:'Overwhelmed — too much at once'};
+
+function initMoodSliders() {
+  const sliders = [
+    {id:'slider-energy',    valId:'val-energy',    descId:'desc-energy',    descs:ENERGY_DESCS},
+    {id:'slider-satisfaction',valId:'val-satisfaction',descId:'desc-satisfaction',descs:SATISFACTION_DESCS},
+    {id:'slider-stress',    valId:'val-stress',    descId:'desc-stress',    descs:STRESS_DESCS},
+  ];
+  sliders.forEach(({id,valId,descId,descs}) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const update = () => {
+      const v = parseInt(el.value);
+      document.getElementById(valId).textContent = v;
+      document.getElementById(descId).textContent = descs[v];
+      el.style.setProperty('--pct', ((v-1)/4*100)+'%');
+    };
+    el.addEventListener('input', update);
+    update();
+  });
+
+  // Set week to current Monday
+  const today = new Date();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((today.getDay()+6)%7));
+  document.getElementById('mood-week').value = monday.toISOString().split('T')[0];
+
+  document.getElementById('mood-submit-btn').addEventListener('click', submitMood);
+}
+
+async function submitMood() {
+  const weekOf      = document.getElementById('mood-week').value;
+  const energy      = parseInt(document.getElementById('slider-energy').value);
+  const satisfaction= parseInt(document.getElementById('slider-satisfaction').value);
+  const stress      = parseInt(document.getElementById('slider-stress').value);
+  const highlight   = document.getElementById('mood-highlight').value.trim();
+  const lowlight    = document.getElementById('mood-lowlight').value.trim();
+  const notes       = document.getElementById('mood-notes').value.trim();
+
+  if (!weekOf) return showToast('Please select a week');
+
+  const btn = document.getElementById('mood-submit-btn');
+  btn.disabled = true;
+  document.getElementById('mood-loading').style.display = 'flex';
+  document.getElementById('mood-result').innerHTML = '';
+
+  try {
+    await sbFetch('weekly_mood', {
+      method: 'POST',
+      headers: { 'Prefer': 'return=representation,resolution=merge-duplicates' },
+      body: JSON.stringify({ user_id: USER_ID, week_of: weekOf, energy_level: energy, satisfaction, stress_level: stress, highlight, lowlight, notes }),
+    });
+    document.getElementById('mood-loading').style.display = 'none';
+    document.getElementById('mood-result').innerHTML = '<div class="success-banner">✓ Mood entry saved for week of ' + weekOf + '</div>';
+    document.getElementById('mood-highlight').value = '';
+    document.getElementById('mood-lowlight').value = '';
+    document.getElementById('mood-notes').value = '';
+    loadMoodHistory();
+    showToast('Mood saved!');
+  } catch(err) {
+    document.getElementById('mood-loading').style.display = 'none';
+    document.getElementById('mood-result').innerHTML = '<div class="error-banner">Error: ' + err.message + '</div>';
+  }
+  btn.disabled = false;
+}
+
+async function loadMoodHistory() {
+  const el = document.getElementById('mood-history-list');
+  el.innerHTML = '';
+  document.getElementById('mood-history-loading').style.display = 'flex';
+  try {
+    const rows = await sbFetch('weekly_mood?user_id=eq.' + USER_ID + '&order=week_of.desc&limit=12');
+    document.getElementById('mood-history-loading').style.display = 'none';
+    if (!rows || rows.length === 0) {
+      el.innerHTML = '<div class="empty-state"><i class="ti ti-mood-smile"></i>No mood entries yet — log your first week above.</div>';
+      return;
+    }
+    rows.forEach(r => {
+      const card = document.createElement('div');
+      card.className = 'mood-history-card';
+      const makeDots = (val) => {
+        let d = '';
+        for(let i=1;i<=5;i++) d += '<div class="mood-dot'+(i<=val?' on':'')+'"></div>';
+        return '<div class="mood-dots">'+d+'</div>';
+      };
+      const weekLabel = new Date(r.week_of).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});
+      card.innerHTML =
+        '<div class="mood-history-head">' +
+          '<div><div class="mood-history-week">Week of ' + weekLabel + '</div>' +
+          (r.highlight ? '<div class="mood-history-title" style="margin-top:3px">' + (r.highlight.length>80?r.highlight.slice(0,80)+'…':r.highlight) + '</div>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="mood-history-body">' +
+          '<div class="mood-metric"><span class="mood-metric-val">' + r.energy_level + '</span>' + makeDots(r.energy_level) + '<div class="mood-metric-label">Energy</div></div>' +
+          '<div class="mood-metric"><span class="mood-metric-val">' + r.satisfaction + '</span>' + makeDots(r.satisfaction) + '<div class="mood-metric-label">Satisfaction</div></div>' +
+          '<div class="mood-metric"><span class="mood-metric-val">' + r.stress_level + '</span>' + makeDots(r.stress_level) + '<div class="mood-metric-label">Stress</div></div>' +
+        '</div>' +
+        (r.lowlight ? '<div style="padding:0 18px 12px;font-size:12px;color:#8A8178;font-family:-apple-system,sans-serif"><i class="ti ti-arrow-down" style="font-size:11px;color:#A09688"></i> ' + (r.lowlight.length>100?r.lowlight.slice(0,100)+'…':r.lowlight) + '</div>' : '');
+      el.appendChild(card);
+    });
+  } catch(err) {
+    document.getElementById('mood-history-loading').style.display = 'none';
+    el.innerHTML = '<div class="empty-state">Error: ' + err.message + '</div>';
+  }
+}
+
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;background:#FAF7F2;color:#2C2520;min-height:100vh;overflow-x:hidden}
@@ -146,6 +256,30 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
   .charts-grid{grid-template-columns:1fr}
   .chart-card.full{grid-column:auto}
 }
+
+.mood-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:24px;margin-bottom:16px}
+.mood-section-label{font-family:'SF Mono','Menlo',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;margin-bottom:14px;display:block}
+.slider-group{margin-bottom:20px}
+.slider-row{display:flex;align-items:center;gap:14px;margin-bottom:4px}
+.slider-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.slider-label{font-size:14px;color:#2C2520;min-width:100px}
+.slider-track{flex:1;position:relative}
+.slider-track input[type=range]{width:100%;height:4px;border-radius:4px;outline:none;border:none;background:linear-gradient(to right,#C4654A 0%,#C4654A var(--pct,60%),#EDE8E0 var(--pct,60%),#EDE8E0 100%);-webkit-appearance:none;cursor:pointer}
+.slider-track input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#C4654A;border:2px solid #fff;box-shadow:0 0 0 1px #C4654A;cursor:pointer}
+.slider-track input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#C4654A;border:2px solid #fff;cursor:pointer}
+.slider-val{font-family:'SF Mono',monospace;font-size:13px;font-weight:600;color:#C4654A;width:18px;text-align:center;flex-shrink:0}
+.slider-desc{font-family:-apple-system,sans-serif;font-size:11px;color:#A09688;margin-left:46px}
+.mood-history-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;overflow:hidden;margin-bottom:10px}
+.mood-history-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #EDE8E0}
+.mood-history-week{font-family:'SF Mono',monospace;font-size:11px;color:#A09688}
+.mood-history-title{font-size:14px;color:#2C2520;font-weight:500}
+.mood-history-body{padding:12px 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mood-metric{text-align:center}
+.mood-metric-val{font-size:20px;font-weight:300;color:#C4654A;display:block}
+.mood-metric-label{font-family:-apple-system,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#A09688}
+.mood-dots{display:flex;gap:4px;justify-content:center;margin-top:4px}
+.mood-dot{width:8px;height:8px;border-radius:50%;background:#EDE8E0}
+.mood-dot.on{background:#C4654A}
 </style>
 </head>
 <body>
@@ -160,6 +294,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
       <li><button class="nav-btn active" data-tab="write"><i class="ti ti-edit"></i> Write</button></li>
       <li><button class="nav-btn" data-tab="entries"><i class="ti ti-list"></i> Entries</button></li>
       <li><button class="nav-btn" data-tab="analytics"><i class="ti ti-chart-bar"></i> Analytics</button></li>
+      <li><button class="nav-btn" data-tab="mood"><i class="ti ti-mood-smile"></i> Mood</button></li>
     </ul>
   </nav>
 
@@ -252,6 +387,98 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
       <div id="analytics-content"></div>
     </section>
 
+  
+    <!-- MOOD -->
+    <section id="mood" class="tab-section">
+      <div class="page-header">
+        <h1>Weekly <em>Mood</em></h1>
+        <p class="sans">Track your energy, satisfaction and stress each week.</p>
+      </div>
+
+      <div class="mood-card">
+        <span class="mood-section-label">Week of</span>
+        <div class="form-group" style="margin-bottom:20px">
+          <input type="date" id="mood-week" style="max-width:200px">
+        </div>
+
+        <span class="mood-section-label">How are you feeling this week?</span>
+
+        <div class="slider-group">
+          <div class="slider-row">
+            <div class="slider-icon" style="background:#FAEEDA"><i class="ti ti-bolt" style="color:#854F0B" aria-hidden="true"></i></div>
+            <div class="slider-label">Energy</div>
+            <div class="slider-track">
+              <input type="range" id="slider-energy" min="1" max="5" value="3" step="1">
+            </div>
+            <div class="slider-val" id="val-energy">3</div>
+          </div>
+          <div class="slider-desc" id="desc-energy">Steady — getting through the week</div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-row">
+            <div class="slider-icon" style="background:#EAF3DE"><i class="ti ti-mood-smile" style="color:#3B6D11" aria-hidden="true"></i></div>
+            <div class="slider-label">Satisfaction</div>
+            <div class="slider-track">
+              <input type="range" id="slider-satisfaction" min="1" max="5" value="3" step="1">
+            </div>
+            <div class="slider-val" id="val-satisfaction">3</div>
+          </div>
+          <div class="slider-desc" id="desc-satisfaction">Neutral — neither thriving nor struggling</div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-row">
+            <div class="slider-icon" style="background:#FBEAF0"><i class="ti ti-flame" style="color:#72243E" aria-hidden="true"></i></div>
+            <div class="slider-label">Stress</div>
+            <div class="slider-track">
+              <input type="range" id="slider-stress" min="1" max="5" value="3" step="1">
+            </div>
+            <div class="slider-val" id="val-stress">3</div>
+          </div>
+          <div class="slider-desc" id="desc-stress">Manageable — normal background pressure</div>
+        </div>
+
+        <span class="mood-section-label" style="margin-top:8px">Highlights & lowlights</span>
+
+        <div class="form-row" style="margin-bottom:16px">
+          <div class="form-group" style="margin-bottom:0">
+            <label for="mood-highlight"><i class="ti ti-arrow-up" aria-hidden="true"></i> Best thing this week</label>
+            <textarea id="mood-highlight" style="min-height:80px" placeholder="What went well? A win, a good conversation, a moment of clarity…"></textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label for="mood-lowlight"><i class="ti ti-arrow-down" aria-hidden="true"></i> Hardest thing this week</label>
+            <textarea id="mood-lowlight" style="min-height:80px" placeholder="What drained you? A blocker, a conflict, something unresolved…"></textarea>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="mood-notes">Any other notes</label>
+          <textarea id="mood-notes" style="min-height:70px" placeholder="Anything else worth capturing about how this week felt…"></textarea>
+        </div>
+
+        <button class="submit-btn" id="mood-submit-btn">
+          <i class="ti ti-device-floppy"></i> Save this week
+        </button>
+        <div class="loading-row" id="mood-loading" style="display:none">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="loading-text">Saving mood entry…</span>
+        </div>
+        <div id="mood-result"></div>
+      </div>
+
+      <div style="margin-top:24px">
+        <div class="page-header" style="margin-bottom:12px">
+          <h1 style="font-size:18px">Past <em>weeks</em></h1>
+        </div>
+        <div class="loading-row" id="mood-history-loading" style="display:none">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="loading-text">Loading history…</span>
+        </div>
+        <div id="mood-history-list"></div>
+      </div>
+    </section>
+
   </main>
 </div>
 
@@ -285,6 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById(tab).classList.add('active');
       if (tab === 'entries')   loadEntries();
       if (tab === 'analytics') loadAnalytics();
+      if (tab === 'mood') { initMoodSliders(); loadMoodHistory(); }
     });
   });
 
