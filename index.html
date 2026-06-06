@@ -244,17 +244,19 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 <div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL      = window.__ENV__?.SUPABASE_URL      || '';
-const SUPABASE_ANON_KEY = window.__ENV__?.SUPABASE_ANON_KEY || '';
-const ANTHROPIC_API_KEY = window.__ENV__?.ANTHROPIC_API_KEY || '';
-const USER_ID = 'demo_user';
+// ── Config — Supabase anon key is safe to be public ───────
+const SUPABASE_URL      = 'https://vfrfgfqwflpwsiadifcp.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmcmZnZnF3Zmxwd3NpYWRpZmNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDYwNjAsImV4cCI6MjA5NjMyMjA2MH0.mTcEnYUe4N_YYZMhML6cKrKmUkoIZ_zfHAhX4K9KcAo';
+// Anthropic key lives on the server — never here
 
+const USER_ID = 'demo_user';
 let selectedCategory = 'win';
 let selectedImpact   = 3;
 let tags             = [];
 
 const IMPACT_LABELS = {1:'Minor mention',2:'Noteworthy',3:'Medium impact',4:'High impact',5:'Career-defining'};
 
+// ── Boot ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
 
@@ -303,6 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('submit-btn').addEventListener('click', submitEntry);
 });
 
+// ── Tags ──────────────────────────────────────────────────
 function renderTags() {
   const container = document.getElementById('tags-container');
   const inp = document.getElementById('tag-input');
@@ -316,17 +319,17 @@ function renderTags() {
   container.appendChild(inp);
   inp.focus();
 }
-
 function removeTag(tag) { tags = tags.filter(t => t !== tag); renderTags(); }
 
+// ── Supabase ──────────────────────────────────────────────
 async function sbFetch(path, options = {}) {
   const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
     ...options,
     headers: {
-      'apikey': SUPABASE_ANON_KEY,
+      'apikey':        SUPABASE_ANON_KEY,
       'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation',
+      'Content-Type':  'application/json',
+      'Prefer':        'return=representation',
       ...(options.headers || {}),
     },
   });
@@ -335,28 +338,18 @@ async function sbFetch(path, options = {}) {
   return text ? JSON.parse(text) : [];
 }
 
+// ── Claude — calls OUR server, not Anthropic directly ────
 async function callClaude(prompt) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-ipc': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      system: 'You are a career coach AI. Respond ONLY with a valid JSON object, no markdown backticks, no preamble.',
-      messages: [{ role: 'user', content: prompt }],
-    }),
+  const res = await fetch('/api/insights', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ prompt }),
   });
-  if (!res.ok) throw new Error('Claude API error: ' + res.status);
-  const data = await res.json();
-  const text = data.content.map(c => c.text || '').join('');
-  return JSON.parse(text.replace(/```json|```/g, '').trim());
+  if (!res.ok) throw new Error('Insights API error: ' + res.status);
+  return res.json();
 }
 
+// ── Submit entry ──────────────────────────────────────────
 async function submitEntry() {
   const title   = document.getElementById('entry-title').value.trim();
   const content = document.getElementById('entry-content').value.trim();
@@ -370,15 +363,31 @@ async function submitEntry() {
   document.getElementById('write-result').innerHTML = '';
 
   try {
-    const entryResult = await sbFetch('journal_entries', {
+    // 1. Save to Supabase
+    const result = await sbFetch('journal_entries', {
       method: 'POST',
-      body: JSON.stringify({ user_id: USER_ID, category: selectedCategory, title, content, impact_level: selectedImpact, tags, entry_date: date }),
+      body: JSON.stringify({
+        user_id: USER_ID, category: selectedCategory,
+        title, content, impact_level: selectedImpact, tags, entry_date: date,
+      }),
     });
+    const entry = Array.isArray(result) ? result[0] : result;
 
-    const insights = await callClaude('A professional logged this entry:\nCategory: ' + selectedCategory + '\nTitle: ' + title + '\nContent: ' + content + '\nImpact: ' + selectedImpact + '/5\n\nReturn ONLY JSON:\n{"summary":"1-sentence summary","interview_story":"STAR format 2-3 sentences","promotion_bullet":"bullet starting with action verb","skill_tags":["skill1","skill2","skill3"],"pattern":"career trajectory observation"}');
+    // 2. Get AI insights from our server (key hidden server-side)
+    const insights = await callClaude(
+      'A professional logged this career entry:\nCategory: ' + selectedCategory +
+      '\nTitle: ' + title + '\nContent: ' + content + '\nImpact: ' + selectedImpact + '/5' +
+      '\n\nReturn ONLY JSON:\n{"summary":"1-sentence summary","interview_story":"STAR format 2-3 sentences","promotion_bullet":"bullet starting with strong action verb","skill_tags":["skill1","skill2","skill3"],"pattern":"career trajectory observation"}'
+    );
 
+    // 3. Save insights to Supabase
     for (const type of ['summary','interview_story','promotion_bullet','pattern']) {
-      if (insights[type]) await sbFetch('entry_insights', { method: 'POST', body: JSON.stringify({ entry_id: (Array.isArray(entryResult) ? entryResult[0] : entryResult).id, user_id: USER_ID, insight_type: type, content: insights[type] }) });
+      if (insights[type]) {
+        await sbFetch('entry_insights', {
+          method: 'POST',
+          body: JSON.stringify({ entry_id: entry.id, user_id: USER_ID, insight_type: type, content: insights[type] }),
+        });
+      }
     }
 
     document.getElementById('write-loading').style.display = 'none';
@@ -396,6 +405,7 @@ async function submitEntry() {
     document.getElementById('entry-content').value = '';
     tags = []; renderTags();
     showToast('Entry saved with AI insights!');
+
   } catch(err) {
     document.getElementById('write-loading').style.display = 'none';
     showToast('Error: ' + err.message);
@@ -404,6 +414,7 @@ async function submitEntry() {
   btn.disabled = false;
 }
 
+// ── Load entries ──────────────────────────────────────────
 async function loadEntries() {
   const listEl  = document.getElementById('entries-list');
   const statsEl = document.getElementById('entries-stats');
@@ -411,26 +422,27 @@ async function loadEntries() {
   listEl.innerHTML = '';
   document.getElementById('entries-loading').style.display = 'flex';
   try {
-    const entries = await sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.desc&limit=50', { headers: { Prefer: 'return=representation' } });
+    const entries = await sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.desc&limit=50');
     document.getElementById('entries-loading').style.display = 'none';
-    if (!entries || entries.length === 0) { listEl.innerHTML = '<div class="empty-state"><i class="ti ti-notebook"></i>No entries yet — write your first one!</div>'; return; }
-
-    const avg = entries.reduce((s,e) => s + (e.impact_level||0), 0) / entries.length;
+    if (!entries || entries.length === 0) {
+      listEl.innerHTML = '<div class="empty-state"><i class="ti ti-notebook"></i>No entries yet — write your first one!</div>';
+      return;
+    }
+    const avg  = entries.reduce((s,e) => s + (e.impact_level||0), 0) / entries.length;
     const cats = {};
     entries.forEach(e => { cats[e.category] = (cats[e.category]||0)+1; });
-    const top = Object.entries(cats).sort((a,b) => b[1]-a[1])[0];
+    const top  = Object.entries(cats).sort((a,b) => b[1]-a[1])[0];
     statsEl.innerHTML =
       '<div class="stat"><span class="stat-val">' + entries.length + '</span><span class="stat-label sans">Total entries</span></div>' +
       '<div class="stat"><span class="stat-val">' + entries.filter(e=>e.category==='win').length + '</span><span class="stat-label sans">Wins logged</span></div>' +
       '<div class="stat"><span class="stat-val">' + avg.toFixed(1) + '</span><span class="stat-label sans">Avg. impact</span></div>' +
-      '<div class="stat"><span class="stat-val" style="font-size:16px;padding-top:4px">' + (top ? top[0] : '—') + '</span><span class="stat-label sans">Top category</span></div>';
+      '<div class="stat"><span class="stat-val" style="font-size:16px;padding-top:4px">' + (top?top[0]:'—') + '</span><span class="stat-label sans">Top category</span></div>';
     statsEl.style.display = 'flex';
-
     entries.forEach(e => {
-      const snippet  = e.content.length > 160 ? e.content.slice(0,160) + '…' : e.content;
-      const tagLine  = e.tags && e.tags.length ? ' · ' + e.tags.join(', ') : '';
-      const card     = document.createElement('div');
-      card.className  = 'entry-card';
+      const snippet = e.content.length > 160 ? e.content.slice(0,160) + '…' : e.content;
+      const tagLine = e.tags && e.tags.length ? ' · ' + e.tags.join(', ') : '';
+      const card    = document.createElement('div');
+      card.className   = 'entry-card';
       card.dataset.cat = e.category;
       card.innerHTML =
         '<div class="entry-top"><div class="entry-title">' + e.title + '</div><span class="badge badge-' + e.category + '">' + e.category + '</span></div>' +
@@ -444,18 +456,23 @@ async function loadEntries() {
   }
 }
 
+// ── Load insights ─────────────────────────────────────────
 async function loadInsights() {
   const el = document.getElementById('insights-content');
   el.innerHTML = '';
   document.getElementById('insights-loading').style.display = 'flex';
   try {
-    const entries = await sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.desc&limit=20', { headers: { Prefer: 'return=representation' } });
+    const entries = await sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.desc&limit=20');
     document.getElementById('insights-loading').style.display = 'none';
-    if (!entries || entries.length === 0) { el.innerHTML = '<div class="empty-state"><i class="ti ti-sparkles"></i>Write at least one entry to generate insights.</div>'; return; }
-
+    if (!entries || entries.length === 0) {
+      el.innerHTML = '<div class="empty-state"><i class="ti ti-sparkles"></i>Write at least one entry to generate insights.</div>';
+      return;
+    }
     const summary = entries.slice(0,10).map(e => '- [' + e.category + '] ' + e.title + ': ' + e.content.slice(0,120)).join('\n');
-    const data = await callClaude(entries.length + ' career journal entries. Recent:\n' + summary + '\n\nReturn ONLY JSON:\n{"career_narrative":"2-3 sentence trajectory","top_strengths":["s1","s2","s3"],"promotion_case":"2-3 sentence case","interview_stories":["headline 1","headline 2"],"growth_areas":"one observation","next_30_days":"one action"}');
-
+    const data = await callClaude(
+      entries.length + ' career journal entries. Recent:\n' + summary +
+      '\n\nReturn ONLY JSON:\n{"career_narrative":"2-3 sentence trajectory","top_strengths":["s1","s2","s3"],"promotion_case":"2-3 sentence promotion case","interview_stories":["headline 1","headline 2"],"growth_areas":"one honest observation","next_30_days":"one specific action"}'
+    );
     const pills  = (data.top_strengths||[]).map(s => '<span class="skill-pill">' + s + '</span>').join('');
     const stories = (data.interview_stories||[]).map(s => '<div style="padding:7px 0;border-bottom:1px solid #EDE8E0;font-size:14px;color:#2C2520">→ ' + s + '</div>').join('');
     el.innerHTML =
@@ -473,6 +490,7 @@ async function loadInsights() {
   }
 }
 
+// ── Utils ─────────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
