@@ -1,15 +1,10 @@
 {
   "name": "careerlog",
   "version": "1.0.0",
-  "description": "Career journal for professionals",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "node-fetch": "^2.7.0",
-    "cors": "^2.8.5"
+    "express": "^4.18.2"
   }
 }
