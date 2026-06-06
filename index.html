@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CareerLog</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;background:#FAF7F2;color:#2C2520;min-height:100vh;overflow-x:hidden}
 .sans{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif}
+.mono{font-family:'SF Mono','Menlo','Monaco','Courier New',monospace}
 #app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
 .sidebar{background:#fff;border-right:1px solid #DDD5C8;padding:32px 16px;display:flex;flex-direction:column;gap:28px;position:sticky;top:0;height:100vh}
 .logo{padding:0 8px}
@@ -20,18 +22,22 @@ body{font-family:'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,G
 .nav-btn:hover{background:#FAF7F2;color:#2C2520}
 .nav-btn.active{background:rgba(196,101,74,0.08);color:#C4654A;font-style:italic}
 .nav-btn i{font-size:16px}
-.main{padding:32px 40px 80px;max-width:860px}
+.main{padding:32px 40px 80px;max-width:1000px}
 .tab-section{display:none}
 .tab-section.active{display:block}
 .page-header{margin-bottom:24px}
 .page-header h1{font-size:28px;font-weight:400;color:#2C2520;letter-spacing:-0.01em}
 .page-header h1 em{font-style:italic;color:#C4654A}
 .page-header p{font-size:13px;color:#8A8178;margin-top:4px}
+
+/* Stats bar */
 .stats-bar{display:flex;gap:0;margin-bottom:28px;border:1px solid #DDD5C8;border-radius:12px;overflow:hidden;background:#fff}
 .stat{flex:1;padding:16px 20px;border-right:1px solid #EDE8E0;text-align:center}
 .stat:last-child{border-right:none}
 .stat-val{font-size:26px;font-weight:300;color:#C4654A;display:block;letter-spacing:-0.02em}
 .stat-label{font-family:-apple-system,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#A09688;margin-top:2px;display:block}
+
+/* Form */
 .form-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:24px}
 .form-group{margin-bottom:18px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
@@ -71,6 +77,9 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .dot:nth-child(3){animation-delay:0.4s}
 @keyframes pulse{0%,60%,100%{transform:scale(0.8);opacity:0.4}30%{transform:scale(1.2);opacity:1}}
 .success-banner{margin-top:1rem;background:#EAF3DE;border:1px solid #B8D99A;border-radius:10px;padding:14px 16px;font-size:14px;color:#3B6D11}
+.error-banner{margin-top:1rem;background:#FAEAE6;border:1px solid #E8A090;border-radius:10px;padding:14px 16px;font-size:14px;color:#C4654A}
+
+/* Entries */
 .entry-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:18px 20px;margin-bottom:10px;position:relative;overflow:hidden;transition:border-color 0.2s}
 .entry-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
 .entry-card[data-cat="win"]::before{background:#C4654A}
@@ -91,11 +100,41 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .badge-decision{background:#E8F2EA;color:#6B8F71}
 .badge-lesson{background:#F5F0E4;color:#C4A46C}
 .badge-challenge{background:#F0EEEB;color:#A09688}
+
+/* Analytics */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.chart-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:20px}
+.chart-card.full{grid-column:1/-1}
+.chart-title{font-family:'SF Mono','Menlo',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;margin-bottom:4px}
+.chart-subtitle{font-size:13px;color:#2C2520;margin-bottom:16px;font-weight:400}
+.chart-wrap{position:relative;height:220px}
+.chart-wrap.tall{height:280px}
+.heatmap-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;margin-top:8px}
+.heatmap-month{text-align:center}
+.heatmap-label{font-family:'SF Mono',monospace;font-size:9px;color:#A09688;margin-bottom:4px}
+.heatmap-days{display:grid;grid-template-columns:repeat(1,1fr);gap:3px}
+.heatmap-day{height:14px;border-radius:2px;background:#EDE8E0}
+.heatmap-day.l1{background:#F5D5C8}
+.heatmap-day.l2{background:#E8A890}
+.heatmap-day.l3{background:#D97A58}
+.heatmap-day.l4{background:#C4654A}
+.impact-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.impact-bar-label{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;width:20px;text-align:right;flex-shrink:0}
+.impact-bar-track{flex:1;height:10px;background:#EDE8E0;border-radius:10px;overflow:hidden}
+.impact-bar-fill{height:100%;background:#C4654A;border-radius:10px;transition:width 0.6s ease}
+.impact-bar-count{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;width:24px;flex-shrink:0}
+.streak-number{font-size:48px;font-weight:300;color:#C4654A;letter-spacing:-0.03em;line-height:1}
+.streak-label{font-family:-apple-system,sans-serif;font-size:12px;color:#A09688;margin-top:4px}
+.top-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.top-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:#FAF7F2;border:1px solid #EDE8E0;border-radius:20px;font-family:-apple-system,sans-serif;font-size:11px;color:#6B6560}
+.top-tag-count{font-family:'SF Mono',monospace;font-size:10px;color:#C4654A}
+
 .toast{position:fixed;bottom:24px;right:24px;background:#2C2520;color:#FAF7F2;padding:10px 16px;border-radius:8px;font-family:'SF Mono',monospace;font-size:12px;opacity:0;pointer-events:none;transition:opacity 0.25s;z-index:100}
 .toast.show{opacity:1}
 .empty-state{text-align:center;padding:80px 20px;color:#A09688;font-size:14px}
 .empty-state i{font-size:36px;display:block;margin-bottom:10px;opacity:0.3}
-@media(max-width:640px){
+
+@media(max-width:768px){
   #app{grid-template-columns:1fr}
   .sidebar{position:static;height:auto;flex-direction:row;align-items:center;padding:1rem 1.25rem;gap:1rem}
   .logo-sub{display:none}
@@ -104,6 +143,8 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
   .form-row{grid-template-columns:1fr}
   .stats-bar{flex-wrap:wrap}
   .stat{min-width:50%}
+  .charts-grid{grid-template-columns:1fr}
+  .chart-card.full{grid-column:auto}
 }
 </style>
 </head>
@@ -118,6 +159,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
     <ul class="nav-links">
       <li><button class="nav-btn active" data-tab="write"><i class="ti ti-edit"></i> Write</button></li>
       <li><button class="nav-btn" data-tab="entries"><i class="ti ti-list"></i> Entries</button></li>
+      <li><button class="nav-btn" data-tab="analytics"><i class="ti ti-chart-bar"></i> Analytics</button></li>
     </ul>
   </nav>
 
@@ -197,6 +239,19 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
       <div id="entries-list"></div>
     </section>
 
+    <!-- ANALYTICS -->
+    <section id="analytics" class="tab-section">
+      <div class="page-header">
+        <h1>Career <em>Analytics</em></h1>
+        <p class="sans">Descriptive patterns across all your entries.</p>
+      </div>
+      <div class="loading-row" id="analytics-loading" style="display:none">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="loading-text">Building analytics…</span>
+      </div>
+      <div id="analytics-content"></div>
+    </section>
+
   </main>
 </div>
 
@@ -210,13 +265,17 @@ const USER_ID = 'demo_user';
 let selectedCategory = 'win';
 let selectedImpact   = 3;
 let tags             = [];
+let chartInstances   = {};
 
 const IMPACT_LABELS = {1:'Minor mention',2:'Noteworthy',3:'Medium impact',4:'High impact',5:'Career-defining'};
+const CAT_COLORS = {
+  win:'#C4654A', metric:'#5B7B8A', feedback:'#8B6BAE',
+  decision:'#6B8F71', lesson:'#C4A46C', challenge:'#A09688'
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
 
-  // Nav
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.tab;
@@ -224,11 +283,11 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById(tab).classList.add('active');
-      if (tab === 'entries') loadEntries();
+      if (tab === 'entries')   loadEntries();
+      if (tab === 'analytics') loadAnalytics();
     });
   });
 
-  // Categories
   document.querySelectorAll('.cat-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
@@ -237,7 +296,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Impact
   document.querySelectorAll('.impact-dot').forEach(dot => {
     dot.addEventListener('click', () => {
       selectedImpact = parseInt(dot.dataset.val, 10);
@@ -247,7 +305,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Tags
   const container = document.getElementById('tags-container');
   const tagInput  = document.getElementById('tag-input');
   container.addEventListener('click', () => tagInput.focus());
@@ -279,7 +336,6 @@ function renderTags() {
 }
 function removeTag(tag) { tags = tags.filter(t => t !== tag); renderTags(); }
 
-// ── Supabase ──────────────────────────────────────────────
 async function sbFetch(path, options = {}) {
   const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
     ...options,
@@ -296,12 +352,10 @@ async function sbFetch(path, options = {}) {
   return text ? JSON.parse(text) : [];
 }
 
-// ── Submit — save only, no AI ────────────────────────────
 async function submitEntry() {
   const title   = document.getElementById('entry-title').value.trim();
   const content = document.getElementById('entry-content').value.trim();
   const date    = document.getElementById('entry-date').value;
-
   if (!title)   return showToast('Please add a title');
   if (!content) return showToast('Please add some content');
   if (!date)    return showToast('Please select a date');
@@ -314,95 +368,301 @@ async function submitEntry() {
   try {
     await sbFetch('journal_entries', {
       method: 'POST',
-      body: JSON.stringify({
-        user_id:      USER_ID,
-        category:     selectedCategory,
-        title,
-        content,
-        impact_level: selectedImpact,
-        tags,
-        entry_date:   date,
-      }),
+      body: JSON.stringify({ user_id: USER_ID, category: selectedCategory, title, content, impact_level: selectedImpact, tags, entry_date: date }),
     });
-
     document.getElementById('write-loading').style.display = 'none';
-    document.getElementById('write-result').innerHTML =
-      '<div class="success-banner">✓ Entry saved successfully.</div>';
-
-    // Reset form
+    document.getElementById('write-result').innerHTML = '<div class="success-banner">✓ Entry saved successfully.</div>';
     document.getElementById('entry-title').value   = '';
     document.getElementById('entry-content').value = '';
     document.getElementById('entry-date').value    = new Date().toISOString().split('T')[0];
     tags = []; renderTags();
     showToast('Entry saved!');
-
   } catch(err) {
     document.getElementById('write-loading').style.display = 'none';
-    document.getElementById('write-result').innerHTML =
-      '<div class="success-banner" style="background:#FAEAE6;border-color:#E8A090;color:#C4654A">Error: ' + err.message + '</div>';
-    console.error(err);
+    document.getElementById('write-result').innerHTML = '<div class="error-banner">Error: ' + err.message + '</div>';
   }
-
   btn.disabled = false;
 }
 
-// ── Load entries ──────────────────────────────────────────
 async function loadEntries() {
   const listEl  = document.getElementById('entries-list');
   const statsEl = document.getElementById('entries-stats');
   statsEl.style.display = 'none';
   listEl.innerHTML = '';
   document.getElementById('entries-loading').style.display = 'flex';
-
   try {
     const entries = await sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.desc&limit=100');
     document.getElementById('entries-loading').style.display = 'none';
+    if (!entries || entries.length === 0) { listEl.innerHTML = '<div class="empty-state"><i class="ti ti-notebook"></i>No entries yet — write your first one!</div>'; return; }
+    const avg  = entries.reduce((s,e) => s+(e.impact_level||0),0)/entries.length;
+    const cats = {};
+    entries.forEach(e => { cats[e.category]=(cats[e.category]||0)+1; });
+    const top  = Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
+    statsEl.innerHTML =
+      '<div class="stat"><span class="stat-val">'+entries.length+'</span><span class="stat-label sans">Total entries</span></div>'+
+      '<div class="stat"><span class="stat-val">'+entries.filter(e=>e.category==='win').length+'</span><span class="stat-label sans">Wins logged</span></div>'+
+      '<div class="stat"><span class="stat-val">'+avg.toFixed(1)+'</span><span class="stat-label sans">Avg. impact</span></div>'+
+      '<div class="stat"><span class="stat-val" style="font-size:16px;padding-top:4px">'+(top?top[0]:'—')+'</span><span class="stat-label sans">Top category</span></div>';
+    statsEl.style.display = 'flex';
+    entries.forEach(e => {
+      const snippet = e.content.length>160?e.content.slice(0,160)+'…':e.content;
+      const tagLine = e.tags&&e.tags.length?' · '+e.tags.join(', '):'';
+      const card = document.createElement('div');
+      card.className='entry-card'; card.dataset.cat=e.category;
+      card.innerHTML=
+        '<div class="entry-top"><div class="entry-title">'+e.title+'</div><span class="badge badge-'+e.category+'">'+e.category+'</span></div>'+
+        '<div class="entry-snippet sans">'+snippet+'</div>'+
+        '<div class="entry-meta">'+e.entry_date+' · Impact '+e.impact_level+'/5'+tagLine+'</div>';
+      listEl.appendChild(card);
+    });
+  } catch(err) {
+    document.getElementById('entries-loading').style.display='none';
+    listEl.innerHTML='<div class="empty-state">Error: '+err.message+'</div>';
+  }
+}
+
+// ── Analytics ─────────────────────────────────────────────
+async function loadAnalytics() {
+  const el = document.getElementById('analytics-content');
+  el.innerHTML = '';
+  document.getElementById('analytics-loading').style.display = 'flex';
+
+  try {
+    const entries = await sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.asc&limit=500');
+    document.getElementById('analytics-loading').style.display = 'none';
 
     if (!entries || entries.length === 0) {
-      listEl.innerHTML = '<div class="empty-state"><i class="ti ti-notebook"></i>No entries yet — write your first one!</div>';
+      el.innerHTML = '<div class="empty-state"><i class="ti ti-chart-bar"></i>No entries yet — start writing to see analytics.</div>';
       return;
     }
 
-    // Stats
-    const avg  = entries.reduce((s,e) => s + (e.impact_level||0), 0) / entries.length;
-    const cats = {};
-    entries.forEach(e => { cats[e.category] = (cats[e.category]||0)+1; });
-    const top  = Object.entries(cats).sort((a,b) => b[1]-a[1])[0];
-    statsEl.innerHTML =
-      '<div class="stat"><span class="stat-val">' + entries.length + '</span><span class="stat-label sans">Total entries</span></div>' +
-      '<div class="stat"><span class="stat-val">' + entries.filter(e=>e.category==='win').length + '</span><span class="stat-label sans">Wins logged</span></div>' +
-      '<div class="stat"><span class="stat-val">' + avg.toFixed(1) + '</span><span class="stat-label sans">Avg. impact</span></div>' +
-      '<div class="stat"><span class="stat-val" style="font-size:16px;padding-top:4px">' + (top?top[0]:'—') + '</span><span class="stat-label sans">Top category</span></div>';
-    statsEl.style.display = 'flex';
+    el.innerHTML = `
+      <div class="charts-grid">
 
-    // Cards
-    entries.forEach(e => {
-      const snippet = e.content.length > 160 ? e.content.slice(0,160) + '…' : e.content;
-      const tagLine = e.tags && e.tags.length ? ' · ' + e.tags.join(', ') : '';
-      const card    = document.createElement('div');
-      card.className   = 'entry-card';
-      card.dataset.cat = e.category;
-      card.innerHTML =
-        '<div class="entry-top">' +
-          '<div class="entry-title">' + e.title + '</div>' +
-          '<span class="badge badge-' + e.category + '">' + e.category + '</span>' +
-        '</div>' +
-        '<div class="entry-snippet sans">' + snippet + '</div>' +
-        '<div class="entry-meta">' + e.entry_date + ' · Impact ' + e.impact_level + '/5' + tagLine + '</div>';
-      listEl.appendChild(card);
-    });
+        <!-- 1. Entries by category — donut -->
+        <div class="chart-card">
+          <div class="chart-title">Distribution</div>
+          <div class="chart-subtitle">Entries by category</div>
+          <div class="chart-wrap"><canvas id="chart-category"></canvas></div>
+        </div>
+
+        <!-- 2. Impact distribution — custom bars -->
+        <div class="chart-card">
+          <div class="chart-title">Impact</div>
+          <div class="chart-subtitle">How impactful are your entries?</div>
+          <div id="impact-bars" style="margin-top:16px"></div>
+        </div>
+
+        <!-- 3. Entries over time — line chart -->
+        <div class="chart-card full">
+          <div class="chart-title">Activity</div>
+          <div class="chart-subtitle">Entries logged per week</div>
+          <div class="chart-wrap tall"><canvas id="chart-timeline"></canvas></div>
+        </div>
+
+        <!-- 4. Category over time — stacked bar -->
+        <div class="chart-card full">
+          <div class="chart-title">Composition</div>
+          <div class="chart-subtitle">Category mix over time</div>
+          <div class="chart-wrap tall"><canvas id="chart-stacked"></canvas></div>
+        </div>
+
+        <!-- 5. Top tags -->
+        <div class="chart-card">
+          <div class="chart-title">Tags</div>
+          <div class="chart-subtitle">Most used tags</div>
+          <div id="top-tags-content" style="margin-top:8px"></div>
+        </div>
+
+        <!-- 6. Avg impact by category -->
+        <div class="chart-card">
+          <div class="chart-title">Impact by category</div>
+          <div class="chart-subtitle">Average impact score per type</div>
+          <div class="chart-wrap"><canvas id="chart-impact-cat"></canvas></div>
+        </div>
+
+      </div>`;
+
+    buildCategoryDonut(entries);
+    buildImpactBars(entries);
+    buildTimeline(entries);
+    buildStacked(entries);
+    buildTopTags(entries);
+    buildImpactByCategory(entries);
 
   } catch(err) {
-    document.getElementById('entries-loading').style.display = 'none';
-    listEl.innerHTML = '<div class="empty-state">Error loading entries: ' + err.message + '</div>';
+    document.getElementById('analytics-loading').style.display = 'none';
+    el.innerHTML = '<div class="empty-state">Error: ' + err.message + '</div>';
   }
+}
+
+function destroyChart(id) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+}
+
+// Chart 1 — Donut by category
+function buildCategoryDonut(entries) {
+  destroyChart('category');
+  const cats = {};
+  entries.forEach(e => { cats[e.category]=(cats[e.category]||0)+1; });
+  const labels = Object.keys(cats);
+  const data   = labels.map(l => cats[l]);
+  const colors = labels.map(l => CAT_COLORS[l]||'#888');
+  const ctx = document.getElementById('chart-category').getContext('2d');
+  chartInstances['category'] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins: { legend: { position:'right', labels:{ font:{size:11}, color:'#6B6560', boxWidth:12 } } } }
+  });
+}
+
+// Chart 2 — Impact bars (custom HTML)
+function buildImpactBars(entries) {
+  const counts = {1:0,2:0,3:0,4:0,5:0};
+  entries.forEach(e => { if(e.impact_level) counts[e.impact_level]++; });
+  const max = Math.max(...Object.values(counts), 1);
+  let html = '';
+  for (let i=5; i>=1; i--) {
+    const pct = Math.round((counts[i]/max)*100);
+    html += `<div class="impact-bar-row">
+      <div class="impact-bar-label">${i}</div>
+      <div class="impact-bar-track"><div class="impact-bar-fill" style="width:${pct}%"></div></div>
+      <div class="impact-bar-count">${counts[i]}</div>
+    </div>`;
+  }
+  document.getElementById('impact-bars').innerHTML = html;
+}
+
+// Chart 3 — Timeline (entries per week)
+function buildTimeline(entries) {
+  destroyChart('timeline');
+  const weeks = {};
+  entries.forEach(e => {
+    const d = new Date(e.entry_date);
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - ((d.getDay()+6)%7));
+    const key = monday.toISOString().split('T')[0];
+    weeks[key] = (weeks[key]||0)+1;
+  });
+  const sorted = Object.keys(weeks).sort();
+  const ctx = document.getElementById('chart-timeline').getContext('2d');
+  chartInstances['timeline'] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: sorted.map(d => { const dt=new Date(d); return dt.toLocaleDateString('en',{month:'short',day:'numeric'}); }),
+      datasets: [{
+        label: 'Entries',
+        data: sorted.map(k=>weeks[k]),
+        borderColor: '#C4654A',
+        backgroundColor: 'rgba(196,101,74,0.08)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#C4654A',
+        pointRadius: 4,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ grid:{color:'#EDE8E0'}, ticks:{color:'#A09688',font:{size:10}} },
+        y:{ grid:{color:'#EDE8E0'}, ticks:{color:'#A09688',font:{size:10},stepSize:1}, beginAtZero:true }
+      }
+    }
+  });
+}
+
+// Chart 4 — Stacked bar by category over time
+function buildStacked(entries) {
+  destroyChart('stacked');
+  const CATS = ['win','metric','feedback','decision','lesson','challenge'];
+  const months = {};
+  entries.forEach(e => {
+    const d = new Date(e.entry_date);
+    const key = d.toLocaleDateString('en',{month:'short',year:'2-digit'});
+    if (!months[key]) months[key] = {};
+    months[key][e.category] = (months[key][e.category]||0)+1;
+  });
+  const labels = Object.keys(months);
+  const ctx = document.getElementById('chart-stacked').getContext('2d');
+  chartInstances['stacked'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: CATS.map(cat => ({
+        label: cat,
+        data: labels.map(m => months[m][cat]||0),
+        backgroundColor: CAT_COLORS[cat],
+        borderRadius: 2,
+      }))
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{font:{size:10},color:'#6B6560',boxWidth:10} } },
+      scales:{
+        x:{ stacked:true, grid:{display:false}, ticks:{color:'#A09688',font:{size:10}} },
+        y:{ stacked:true, grid:{color:'#EDE8E0'}, ticks:{color:'#A09688',font:{size:10},stepSize:1}, beginAtZero:true }
+      }
+    }
+  });
+}
+
+// Chart 5 — Top tags
+function buildTopTags(entries) {
+  const tagCounts = {};
+  entries.forEach(e => {
+    (e.tags||[]).forEach(t => { tagCounts[t]=(tagCounts[t]||0)+1; });
+  });
+  const sorted = Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const el = document.getElementById('top-tags-content');
+  if (!sorted.length) {
+    el.innerHTML = '<p style="font-size:13px;color:#A09688">No tags yet — add tags when writing entries.</p>';
+    return;
+  }
+  el.innerHTML = '<div class="top-tags">' +
+    sorted.map(([tag,count]) =>
+      `<span class="top-tag">${tag}<span class="top-tag-count">${count}</span></span>`
+    ).join('') + '</div>';
+}
+
+// Chart 6 — Avg impact by category
+function buildImpactByCategory(entries) {
+  destroyChart('impact-cat');
+  const CATS = ['win','metric','feedback','decision','lesson','challenge'];
+  const sums = {}; const counts = {};
+  entries.forEach(e => {
+    if (!e.impact_level) return;
+    sums[e.category]   = (sums[e.category]||0) + e.impact_level;
+    counts[e.category] = (counts[e.category]||0) + 1;
+  });
+  const avgs = CATS.map(c => counts[c] ? +(sums[c]/counts[c]).toFixed(2) : 0);
+  const ctx = document.getElementById('chart-impact-cat').getContext('2d');
+  chartInstances['impact-cat'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: CATS,
+      datasets: [{
+        data: avgs,
+        backgroundColor: CATS.map(c=>CAT_COLORS[c]),
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ grid:{display:false}, ticks:{color:'#A09688',font:{size:10}} },
+        y:{ min:0, max:5, grid:{color:'#EDE8E0'}, ticks:{color:'#A09688',font:{size:10},stepSize:1} }
+      }
+    }
+  });
 }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
+  setTimeout(()=>t.classList.remove('show'),3000);
 }
 </script>
 </body>
