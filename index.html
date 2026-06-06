@@ -59,13 +59,15 @@ async function submitMood() {
     await sbFetch('weekly_mood', {
       method: 'POST',
       headers: { 'Prefer': 'return=representation,resolution=merge-duplicates' },
-      body: JSON.stringify({ user_id: USER_ID, week_of: weekOf, energy_level: energy, satisfaction, stress_level: stress, highlight, lowlight, notes }),
+      body: JSON.stringify({ user_id: USER_ID, week_of: weekOf, energy_level: energy, satisfaction, stress_level: stress, primary_emotion: selectedEmotion, highlight, lowlight, notes }),
     });
     document.getElementById('mood-loading').style.display = 'none';
     document.getElementById('mood-result').innerHTML = '<div class="success-banner">✓ Mood entry saved for week of ' + weekOf + '</div>';
     document.getElementById('mood-highlight').value = '';
     document.getElementById('mood-lowlight').value = '';
     document.getElementById('mood-notes').value = '';
+    document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('selected'));
+    selectedEmotion = null;
     loadMoodHistory();
     showToast('Mood saved!');
   } catch(err) {
@@ -100,6 +102,7 @@ async function loadMoodHistory() {
           '<div><div class="mood-history-week">Week of ' + weekLabel + '</div>' +
           (r.highlight ? '<div class="mood-history-title" style="margin-top:3px">' + (r.highlight.length>80?r.highlight.slice(0,80)+'…':r.highlight) + '</div>' : '') +
           '</div>' +
+          (r.primary_emotion ? '<span style="font-family:-apple-system,sans-serif;font-size:11px;padding:3px 10px;background:#FAEAE6;color:#C4654A;border-radius:20px;white-space:nowrap">' + r.primary_emotion + '</span>' : '') +
         '</div>' +
         '<div class="mood-history-body">' +
           '<div class="mood-metric"><span class="mood-metric-val">' + r.energy_level + '</span>' + makeDots(r.energy_level) + '<div class="mood-metric-label">Energy</div></div>' +
@@ -112,6 +115,20 @@ async function loadMoodHistory() {
   } catch(err) {
     document.getElementById('mood-history-loading').style.display = 'none';
     el.innerHTML = '<div class="empty-state">Error: ' + err.message + '</div>';
+  }
+}
+
+
+// ── Emotion picker ────────────────────────────────────────
+let selectedEmotion = null;
+
+function selectEmotion(btn) {
+  document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('selected'));
+  if (selectedEmotion === btn.dataset.emotion) {
+    selectedEmotion = null;
+  } else {
+    btn.classList.add('selected');
+    selectedEmotion = btn.dataset.emotion;
   }
 }
 
@@ -280,6 +297,14 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .mood-dots{display:flex;gap:4px;justify-content:center;margin-top:4px}
 .mood-dot{width:8px;height:8px;border-radius:50%;background:#EDE8E0}
 .mood-dot.on{background:#C4654A}
+
+.emotion-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
+.emotion-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 6px;border:1px solid #EDE8E0;border-radius:10px;background:#fff;cursor:pointer;transition:all 0.15s;font-family:-apple-system,sans-serif}
+.emotion-btn:hover{border-color:#C4654A;background:#FAF7F2}
+.emotion-btn.selected{border-color:#C4654A;background:#FAEAE6}
+.emotion-emoji{font-size:22px;line-height:1}
+.emotion-label{font-size:10px;color:#8A8178;text-align:center;font-family:-apple-system,sans-serif}
+.emotion-btn.selected .emotion-label{color:#C4654A;font-weight:500}
 </style>
 </head>
 <body>
@@ -439,7 +464,60 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
           <div class="slider-desc" id="desc-stress">Manageable — normal background pressure</div>
         </div>
 
-        <span class="mood-section-label" style="margin-top:8px">Highlights & lowlights</span>
+        
+        <span class="mood-section-label" style="margin-top:4px">Primary emotion</span>
+        <div class="emotion-grid" id="emotion-grid">
+          <button class="emotion-btn" data-emotion="motivated" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">🔥</span><span class="emotion-label">Motivated</span>
+          </button>
+          <button class="emotion-btn" data-emotion="confident" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">💪</span><span class="emotion-label">Confident</span>
+          </button>
+          <button class="emotion-btn" data-emotion="proud" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">⭐</span><span class="emotion-label">Proud</span>
+          </button>
+          <button class="emotion-btn" data-emotion="grateful" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">🙏</span><span class="emotion-label">Grateful</span>
+          </button>
+          <button class="emotion-btn" data-emotion="calm" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">😌</span><span class="emotion-label">Calm</span>
+          </button>
+          <button class="emotion-btn" data-emotion="curious" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">🔍</span><span class="emotion-label">Curious</span>
+          </button>
+          <button class="emotion-btn" data-emotion="focused" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">🎯</span><span class="emotion-label">Focused</span>
+          </button>
+          <button class="emotion-btn" data-emotion="creative" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">💡</span><span class="emotion-label">Creative</span>
+          </button>
+          <button class="emotion-btn" data-emotion="anxious" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">😰</span><span class="emotion-label">Anxious</span>
+          </button>
+          <button class="emotion-btn" data-emotion="overwhelmed" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">😵</span><span class="emotion-label">Overwhelmed</span>
+          </button>
+          <button class="emotion-btn" data-emotion="frustrated" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">😤</span><span class="emotion-label">Frustrated</span>
+          </button>
+          <button class="emotion-btn" data-emotion="bored" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">😑</span><span class="emotion-label">Bored</span>
+          </button>
+          <button class="emotion-btn" data-emotion="burnt-out" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">🪫</span><span class="emotion-label">Burnt out</span>
+          </button>
+          <button class="emotion-btn" data-emotion="uncertain" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">🤔</span><span class="emotion-label">Uncertain</span>
+          </button>
+          <button class="emotion-btn" data-emotion="disconnected" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">🔌</span><span class="emotion-label">Disconnected</span>
+          </button>
+          <button class="emotion-btn" data-emotion="undervalued" onclick="selectEmotion(this)">
+            <span class="emotion-emoji">👻</span><span class="emotion-label">Undervalued</span>
+          </button>
+        </div>
+
+<span class="mood-section-label" style="margin-top:16px">Highlights & lowlights</span>
 
         <div class="form-row" style="margin-bottom:16px">
           <div class="form-group" style="margin-bottom:0">
