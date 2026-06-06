@@ -8,11 +8,8 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;background:#FAF7F2;color:#2C2520;min-height:100vh;overflow-x:hidden}
-.mono{font-family:'SF Mono','Menlo','Monaco','Courier New',monospace}
 .sans{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif}
-
 #app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
-
 .sidebar{background:#fff;border-right:1px solid #DDD5C8;padding:32px 16px;display:flex;flex-direction:column;gap:28px;position:sticky;top:0;height:100vh}
 .logo{padding:0 8px}
 .logo h1{font-size:22px;font-weight:400;color:#2C2520;letter-spacing:-0.01em}
@@ -23,22 +20,18 @@ body{font-family:'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,G
 .nav-btn:hover{background:#FAF7F2;color:#2C2520}
 .nav-btn.active{background:rgba(196,101,74,0.08);color:#C4654A;font-style:italic}
 .nav-btn i{font-size:16px}
-
 .main{padding:32px 40px 80px;max-width:860px}
 .tab-section{display:none}
 .tab-section.active{display:block}
-
 .page-header{margin-bottom:24px}
 .page-header h1{font-size:28px;font-weight:400;color:#2C2520;letter-spacing:-0.01em}
 .page-header h1 em{font-style:italic;color:#C4654A}
 .page-header p{font-size:13px;color:#8A8178;margin-top:4px}
-
 .stats-bar{display:flex;gap:0;margin-bottom:28px;border:1px solid #DDD5C8;border-radius:12px;overflow:hidden;background:#fff}
 .stat{flex:1;padding:16px 20px;border-right:1px solid #EDE8E0;text-align:center}
 .stat:last-child{border-right:none}
 .stat-val{font-size:26px;font-weight:300;color:#C4654A;display:block;letter-spacing:-0.02em}
 .stat-label{font-family:-apple-system,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#A09688;margin-top:2px;display:block}
-
 .form-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:24px}
 .form-group{margin-bottom:18px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
@@ -47,7 +40,6 @@ label .muted{color:#C4B8AC}
 input[type="text"],input[type="date"],textarea{width:100%;padding:9px 13px;border:1px solid #DDD5C8;border-radius:8px;background:#FAF7F2;color:#2C2520;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:14px;outline:none;transition:border-color 0.15s,background 0.15s}
 input:focus,textarea:focus{border-color:#C4654A;background:#fff}
 textarea{min-height:110px;resize:vertical;line-height:1.6}
-
 .category-grid{display:flex;gap:6px;flex-wrap:wrap}
 .cat-btn{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;border:1px solid #DDD5C8;background:#fff;font-family:-apple-system,sans-serif;font-size:11px;color:#6B6560;cursor:pointer;transition:all 0.15s;user-select:none}
 .cat-btn:hover{border-color:#C4654A;color:#C4654A}
@@ -58,43 +50,28 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .cat-btn.selected[data-cat="decision"]{background:#6B8F71;border-color:#6B8F71;color:#fff}
 .cat-btn.selected[data-cat="lesson"]{background:#C4A46C;border-color:#C4A46C;color:#fff}
 .cat-btn.selected[data-cat="challenge"]{background:#A09688;border-color:#A09688;color:#fff}
-
 .impact-row{display:flex;gap:8px}
 .impact-dot{width:34px;height:34px;border-radius:50%;border:1px solid #DDD5C8;background:#FAF7F2;color:#8A8178;font-family:'SF Mono',monospace;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.12s}
 .impact-dot:hover{border-color:#C4654A;color:#C4654A}
 .impact-dot.selected{background:#C4654A;border-color:#C4654A;color:#fff}
 .impact-label{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;margin-top:5px;letter-spacing:0.02em}
-
 .tags-input{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 10px;border:1px solid #DDD5C8;border-radius:8px;background:#FAF7F2;cursor:text;min-height:40px;transition:border-color 0.15s}
 .tags-input:focus-within{border-color:#C4654A;background:#fff}
 .tags-input input{border:none;background:transparent;outline:none;padding:0;min-width:100px;flex:1;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:13px;color:#2C2520}
 .tag-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:#EDE8E0;border-radius:20px;font-family:-apple-system,sans-serif;font-size:11px;color:#6B6560}
 .tag-pill button{background:none;border:none;cursor:pointer;color:#A09688;font-size:15px;line-height:1;padding:0}
-.tag-pill button:hover{color:#2C2520}
-
 .submit-btn{width:100%;padding:12px;margin-top:4px;background:#2C2520;color:#FAF7F2;border:none;border-radius:8px;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:15px;font-style:italic;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.15s}
 .submit-btn:hover{opacity:0.82}
 .submit-btn:disabled{opacity:0.4;cursor:not-allowed}
 .submit-btn i{font-size:17px;font-style:normal}
-
 .loading-row{display:flex;align-items:center;gap:5px;padding:1rem 0}
-.loading-text{font-family:'SF Mono',monospace;font-size:11px;color:#A09688;margin-left:6px;letter-spacing:0.02em}
+.loading-text{font-family:'SF Mono',monospace;font-size:11px;color:#A09688;margin-left:6px}
 .dot{width:5px;height:5px;border-radius:50%;background:#C4B8AC;animation:pulse 1.2s ease-in-out infinite}
 .dot:nth-child(2){animation-delay:0.2s}
 .dot:nth-child(3){animation-delay:0.4s}
 @keyframes pulse{0%,60%,100%{transform:scale(0.8);opacity:0.4}30%{transform:scale(1.2);opacity:1}}
-
-#write-result{margin-top:1.25rem}
-.result-banner{border-left:3px solid #C4654A;padding-left:1rem;margin-bottom:1.25rem}
-.result-saved{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px}
-.result-summary{font-size:15px;color:#2C2520;line-height:1.5;margin-bottom:1rem}
-
-.insight-card{background:#FAF7F2;border:1px solid #EDE8E0;border-radius:10px;padding:14px 16px;margin-bottom:10px}
-.insight-label{font-family:'SF Mono','Menlo',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;padding-bottom:6px;border-bottom:1px solid #EDE8E0;margin-bottom:8px}
-.insight-body{font-size:14px;color:#2C2520;line-height:1.65}
-.insight-mono{font-family:'SF Mono',monospace;font-size:12px;color:#2C2520}
-
-.entry-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:18px 20px;margin-bottom:10px;cursor:default;transition:border-color 0.2s;position:relative;overflow:hidden}
+.success-banner{margin-top:1rem;background:#EAF3DE;border:1px solid #B8D99A;border-radius:10px;padding:14px 16px;font-size:14px;color:#3B6D11}
+.entry-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:18px 20px;margin-bottom:10px;position:relative;overflow:hidden;transition:border-color 0.2s}
 .entry-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
 .entry-card[data-cat="win"]::before{background:#C4654A}
 .entry-card[data-cat="metric"]::before{background:#5B7B8A}
@@ -104,7 +81,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .entry-card[data-cat="challenge"]::before{background:#A09688}
 .entry-card:hover{border-color:#C4654A}
 .entry-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
-.entry-title{font-size:14px;color:#2C2520;line-height:1.45}
+.entry-title{font-size:14px;color:#2C2520;line-height:1.45;font-weight:500}
 .entry-snippet{font-size:13px;color:#8A8178;line-height:1.5}
 .entry-meta{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;margin-top:8px}
 .badge{font-family:'SF Mono',monospace;font-size:9px;font-weight:600;padding:3px 8px;border-radius:4px;flex-shrink:0;white-space:nowrap}
@@ -114,17 +91,10 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .badge-decision{background:#E8F2EA;color:#6B8F71}
 .badge-lesson{background:#F5F0E4;color:#C4A46C}
 .badge-challenge{background:#F0EEEB;color:#A09688}
-
-.insights-header{font-family:'SF Mono',monospace;font-size:11px;color:#A09688;margin-bottom:20px;letter-spacing:0.03em}
-.insight-card.highlight{border-color:#C4654A}
-.skill-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.skill-pill{display:inline-flex;padding:4px 12px;background:rgba(196,101,74,0.08);border:1px solid rgba(196,101,74,0.2);border-radius:20px;font-family:-apple-system,sans-serif;font-size:11px;color:#C4654A}
-
 .toast{position:fixed;bottom:24px;right:24px;background:#2C2520;color:#FAF7F2;padding:10px 16px;border-radius:8px;font-family:'SF Mono',monospace;font-size:12px;opacity:0;pointer-events:none;transition:opacity 0.25s;z-index:100}
 .toast.show{opacity:1}
 .empty-state{text-align:center;padding:80px 20px;color:#A09688;font-size:14px}
 .empty-state i{font-size:36px;display:block;margin-bottom:10px;opacity:0.3}
-
 @media(max-width:640px){
   #app{grid-template-columns:1fr}
   .sidebar{position:static;height:auto;flex-direction:row;align-items:center;padding:1rem 1.25rem;gap:1rem}
@@ -148,12 +118,12 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
     <ul class="nav-links">
       <li><button class="nav-btn active" data-tab="write"><i class="ti ti-edit"></i> Write</button></li>
       <li><button class="nav-btn" data-tab="entries"><i class="ti ti-list"></i> Entries</button></li>
-      <li><button class="nav-btn" data-tab="insights"><i class="ti ti-sparkles"></i> Insights</button></li>
     </ul>
   </nav>
 
   <main class="main">
 
+    <!-- WRITE -->
     <section id="write" class="tab-section active">
       <div class="page-header">
         <h1>New <em>Entry</em></h1>
@@ -177,7 +147,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
         </div>
         <div class="form-group">
           <label for="entry-content">What happened? <span class="muted">— be specific, include numbers</span></label>
-          <textarea id="entry-content" placeholder="Describe the situation, what you did, and the result. Numbers and metrics make this powerful later: 'reduced load time by 40%', 'onboarded 3 enterprise clients worth $200k'..."></textarea>
+          <textarea id="entry-content" placeholder="Describe the situation, what you did, and the result. The more detail, the better your insights later."></textarea>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -203,16 +173,17 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
           </div>
         </div>
         <button class="submit-btn" id="submit-btn">
-          <i class="ti ti-send"></i> Save entry &amp; generate insights
+          <i class="ti ti-device-floppy"></i> Save entry
         </button>
         <div class="loading-row" id="write-loading" style="display:none">
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span class="loading-text">Saving and generating AI insights…</span>
+          <span class="loading-text">Saving entry…</span>
         </div>
         <div id="write-result"></div>
       </div>
     </section>
 
+    <!-- ENTRIES -->
     <section id="entries" class="tab-section">
       <div class="page-header">
         <h1>All <em>Entries</em></h1>
@@ -226,40 +197,26 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
       <div id="entries-list"></div>
     </section>
 
-    <section id="insights" class="tab-section">
-      <div class="page-header">
-        <h1>Career <em>Insights</em></h1>
-        <p class="sans">AI analysis of your full track record.</p>
-      </div>
-      <div class="loading-row" id="insights-loading" style="display:none">
-        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        <span class="loading-text">Generating career insights…</span>
-      </div>
-      <div id="insights-content"></div>
-    </section>
-
   </main>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Config — Supabase anon key is safe to be public ───────
 const SUPABASE_URL      = 'https://vfrfgfqwflpwsiadifcp.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmcmZnZnF3Zmxwd3NpYWRpZmNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDYwNjAsImV4cCI6MjA5NjMyMjA2MH0.mTcEnYUe4N_YYZMhML6cKrKmUkoIZ_zfHAhX4K9KcAo';
-// Anthropic key lives on the server — never here
-
 const USER_ID = 'demo_user';
+
 let selectedCategory = 'win';
 let selectedImpact   = 3;
 let tags             = [];
 
 const IMPACT_LABELS = {1:'Minor mention',2:'Noteworthy',3:'Medium impact',4:'High impact',5:'Career-defining'};
 
-// ── Boot ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
 
+  // Nav
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.tab;
@@ -268,10 +225,10 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
       document.getElementById(tab).classList.add('active');
       if (tab === 'entries') loadEntries();
-      if (tab === 'insights') loadInsights();
     });
   });
 
+  // Categories
   document.querySelectorAll('.cat-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
@@ -280,6 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Impact
   document.querySelectorAll('.impact-dot').forEach(dot => {
     dot.addEventListener('click', () => {
       selectedImpact = parseInt(dot.dataset.val, 10);
@@ -289,6 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Tags
   const container = document.getElementById('tags-container');
   const tagInput  = document.getElementById('tag-input');
   container.addEventListener('click', () => tagInput.focus());
@@ -305,7 +264,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('submit-btn').addEventListener('click', submitEntry);
 });
 
-// ── Tags ──────────────────────────────────────────────────
 function renderTags() {
   const container = document.getElementById('tags-container');
   const inp = document.getElementById('tag-input');
@@ -338,24 +296,15 @@ async function sbFetch(path, options = {}) {
   return text ? JSON.parse(text) : [];
 }
 
-// ── Claude — calls OUR server, not Anthropic directly ────
-async function callClaude(prompt) {
-  const res = await fetch('/api/insights', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ prompt }),
-  });
-  if (!res.ok) throw new Error('Insights API error: ' + res.status);
-  return res.json();
-}
-
-// ── Submit entry ──────────────────────────────────────────
+// ── Submit — save only, no AI ────────────────────────────
 async function submitEntry() {
   const title   = document.getElementById('entry-title').value.trim();
   const content = document.getElementById('entry-content').value.trim();
   const date    = document.getElementById('entry-date').value;
+
   if (!title)   return showToast('Please add a title');
   if (!content) return showToast('Please add some content');
+  if (!date)    return showToast('Please select a date');
 
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
@@ -363,54 +312,37 @@ async function submitEntry() {
   document.getElementById('write-result').innerHTML = '';
 
   try {
-    // 1. Save to Supabase
-    const result = await sbFetch('journal_entries', {
+    await sbFetch('journal_entries', {
       method: 'POST',
       body: JSON.stringify({
-        user_id: USER_ID, category: selectedCategory,
-        title, content, impact_level: selectedImpact, tags, entry_date: date,
+        user_id:      USER_ID,
+        category:     selectedCategory,
+        title,
+        content,
+        impact_level: selectedImpact,
+        tags,
+        entry_date:   date,
       }),
     });
-    const entry = Array.isArray(result) ? result[0] : result;
-
-    // 2. Get AI insights from our server (key hidden server-side)
-    const insights = await callClaude(
-      'A professional logged this career entry:\nCategory: ' + selectedCategory +
-      '\nTitle: ' + title + '\nContent: ' + content + '\nImpact: ' + selectedImpact + '/5' +
-      '\n\nReturn ONLY JSON:\n{"summary":"1-sentence summary","interview_story":"STAR format 2-3 sentences","promotion_bullet":"bullet starting with strong action verb","skill_tags":["skill1","skill2","skill3"],"pattern":"career trajectory observation"}'
-    );
-
-    // 3. Save insights to Supabase
-    for (const type of ['summary','interview_story','promotion_bullet','pattern']) {
-      if (insights[type]) {
-        await sbFetch('entry_insights', {
-          method: 'POST',
-          body: JSON.stringify({ entry_id: entry.id, user_id: USER_ID, insight_type: type, content: insights[type] }),
-        });
-      }
-    }
 
     document.getElementById('write-loading').style.display = 'none';
-    const skillPills = (insights.skill_tags || []).map(s => '<span class="skill-pill">' + s + '</span>').join('');
     document.getElementById('write-result').innerHTML =
-      '<div class="result-banner">' +
-      '<p class="result-saved">Entry saved ✓</p>' +
-      '<p class="result-summary">' + (insights.summary || '') + '</p>' +
-      (insights.interview_story ? '<div class="insight-card"><div class="insight-label">Interview story — STAR</div><div class="insight-body">' + insights.interview_story + '</div></div>' : '') +
-      (insights.promotion_bullet ? '<div class="insight-card"><div class="insight-label">Promotion packet bullet</div><div class="insight-body insight-mono">' + insights.promotion_bullet + '</div></div>' : '') +
-      (skillPills ? '<div class="skill-pills">' + skillPills + '</div>' : '') +
-      '</div>';
+      '<div class="success-banner">✓ Entry saved successfully.</div>';
 
-    document.getElementById('entry-title').value = '';
+    // Reset form
+    document.getElementById('entry-title').value   = '';
     document.getElementById('entry-content').value = '';
+    document.getElementById('entry-date').value    = new Date().toISOString().split('T')[0];
     tags = []; renderTags();
-    showToast('Entry saved with AI insights!');
+    showToast('Entry saved!');
 
   } catch(err) {
     document.getElementById('write-loading').style.display = 'none';
-    showToast('Error: ' + err.message);
+    document.getElementById('write-result').innerHTML =
+      '<div class="success-banner" style="background:#FAEAE6;border-color:#E8A090;color:#C4654A">Error: ' + err.message + '</div>';
     console.error(err);
   }
+
   btn.disabled = false;
 }
 
@@ -421,13 +353,17 @@ async function loadEntries() {
   statsEl.style.display = 'none';
   listEl.innerHTML = '';
   document.getElementById('entries-loading').style.display = 'flex';
+
   try {
-    const entries = await sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.desc&limit=50');
+    const entries = await sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.desc&limit=100');
     document.getElementById('entries-loading').style.display = 'none';
+
     if (!entries || entries.length === 0) {
       listEl.innerHTML = '<div class="empty-state"><i class="ti ti-notebook"></i>No entries yet — write your first one!</div>';
       return;
     }
+
+    // Stats
     const avg  = entries.reduce((s,e) => s + (e.impact_level||0), 0) / entries.length;
     const cats = {};
     entries.forEach(e => { cats[e.category] = (cats[e.category]||0)+1; });
@@ -438,6 +374,8 @@ async function loadEntries() {
       '<div class="stat"><span class="stat-val">' + avg.toFixed(1) + '</span><span class="stat-label sans">Avg. impact</span></div>' +
       '<div class="stat"><span class="stat-val" style="font-size:16px;padding-top:4px">' + (top?top[0]:'—') + '</span><span class="stat-label sans">Top category</span></div>';
     statsEl.style.display = 'flex';
+
+    // Cards
     entries.forEach(e => {
       const snippet = e.content.length > 160 ? e.content.slice(0,160) + '…' : e.content;
       const tagLine = e.tags && e.tags.length ? ' · ' + e.tags.join(', ') : '';
@@ -445,52 +383,21 @@ async function loadEntries() {
       card.className   = 'entry-card';
       card.dataset.cat = e.category;
       card.innerHTML =
-        '<div class="entry-top"><div class="entry-title">' + e.title + '</div><span class="badge badge-' + e.category + '">' + e.category + '</span></div>' +
+        '<div class="entry-top">' +
+          '<div class="entry-title">' + e.title + '</div>' +
+          '<span class="badge badge-' + e.category + '">' + e.category + '</span>' +
+        '</div>' +
         '<div class="entry-snippet sans">' + snippet + '</div>' +
         '<div class="entry-meta">' + e.entry_date + ' · Impact ' + e.impact_level + '/5' + tagLine + '</div>';
       listEl.appendChild(card);
     });
+
   } catch(err) {
     document.getElementById('entries-loading').style.display = 'none';
-    listEl.innerHTML = '<div class="empty-state">Error: ' + err.message + '</div>';
+    listEl.innerHTML = '<div class="empty-state">Error loading entries: ' + err.message + '</div>';
   }
 }
 
-// ── Load insights ─────────────────────────────────────────
-async function loadInsights() {
-  const el = document.getElementById('insights-content');
-  el.innerHTML = '';
-  document.getElementById('insights-loading').style.display = 'flex';
-  try {
-    const entries = await sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.desc&limit=20');
-    document.getElementById('insights-loading').style.display = 'none';
-    if (!entries || entries.length === 0) {
-      el.innerHTML = '<div class="empty-state"><i class="ti ti-sparkles"></i>Write at least one entry to generate insights.</div>';
-      return;
-    }
-    const summary = entries.slice(0,10).map(e => '- [' + e.category + '] ' + e.title + ': ' + e.content.slice(0,120)).join('\n');
-    const data = await callClaude(
-      entries.length + ' career journal entries. Recent:\n' + summary +
-      '\n\nReturn ONLY JSON:\n{"career_narrative":"2-3 sentence trajectory","top_strengths":["s1","s2","s3"],"promotion_case":"2-3 sentence promotion case","interview_stories":["headline 1","headline 2"],"growth_areas":"one honest observation","next_30_days":"one specific action"}'
-    );
-    const pills  = (data.top_strengths||[]).map(s => '<span class="skill-pill">' + s + '</span>').join('');
-    const stories = (data.interview_stories||[]).map(s => '<div style="padding:7px 0;border-bottom:1px solid #EDE8E0;font-size:14px;color:#2C2520">→ ' + s + '</div>').join('');
-    el.innerHTML =
-      '<p class="insights-header mono">' + entries.length + ' entries analysed</p>' +
-      (data.career_narrative ? '<div class="insight-card"><div class="insight-label">Your career story</div><div class="insight-body">' + data.career_narrative + '</div></div>' : '') +
-      (pills ? '<div class="insight-card"><div class="insight-label">Top strengths</div><div class="skill-pills">' + pills + '</div></div>' : '') +
-      (data.promotion_case ? '<div class="insight-card"><div class="insight-label">Promotion case</div><div class="insight-body">' + data.promotion_case + '</div></div>' : '') +
-      (stories ? '<div class="insight-card"><div class="insight-label">Interview story bank</div>' + stories + '</div>' : '') +
-      (data.growth_areas ? '<div class="insight-card"><div class="insight-label">Pattern to notice</div><div class="insight-body">' + data.growth_areas + '</div></div>' : '') +
-      (data.next_30_days ? '<div class="insight-card highlight"><div class="insight-label" style="color:#C4654A;border-bottom-color:rgba(196,101,74,0.2)">Next 30 days</div><div class="insight-body" style="font-style:italic">' + data.next_30_days + '</div></div>' : '');
-  } catch(err) {
-    document.getElementById('insights-loading').style.display = 'none';
-    el.innerHTML = '<div class="empty-state">Error: ' + err.message + '</div>';
-    console.error(err);
-  }
-}
-
-// ── Utils ─────────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
