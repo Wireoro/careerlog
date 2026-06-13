@@ -126,7 +126,7 @@ function renderScore(data, entryCount, calculatedAt) {
   const score = data.score;
   const tier  = data.tier;
   const bd    = data.breakdown;
-  const pct   = Math.round(((score - 300) / 550) * 100);
+  const pct   = Math.round((score / 1000) * 100);
 
   const PILLAR_LABELS = {
     consistency:   { label: 'Consistency',    icon: 'ti-calendar-stats', desc: 'How regularly you log entries' },
@@ -172,7 +172,7 @@ function renderScore(data, entryCount, calculatedAt) {
       <div class="score-tier">${tier.label} · based on ${entryCount} entries</div>
       <div class="score-gauge">
         <div class="gauge-track"><div class="gauge-fill" style="width:${pct}%;background:${tier.color}"></div></div>
-        <div class="gauge-labels"><span>300</span><span>400</span><span>500</span><span>600</span><span>700</span><span>850</span></div>
+        <div class="gauge-labels"><span>0</span><span>200</span><span>400</span><span>600</span><span>800</span><span>1000</span></div>
       </div>
     </div>
 

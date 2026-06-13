@@ -16,8 +16,8 @@ const WEIGHTS = {
 
 // ── Max raw points per pillar (maps to 0–110 contribution each) ──
 const PILLAR_CAP = 550;
-const BASE_SCORE = 300;
-const MAX_SCORE  = 850;
+const BASE_SCORE = 0;
+const MAX_SCORE  = 1000;
 
 // ── Helpers ───────────────────────────────────────────────
 function clamp(val, min, max) {
@@ -239,12 +239,13 @@ function calculateScore(entries, moodRows) {
 
 // ── Tier lookup ───────────────────────────────────────────
 function getTier(score) {
-  if (score >= 800) return { label: 'Elite track record', grade: 'A+', color: '#185FA5' };
-  if (score >= 700) return { label: 'Exceptional',        grade: 'A',  color: '#3B6D11' };
+  if (score >= 900) return { label: 'Elite track record', grade: 'A+', color: '#185FA5' };
+  if (score >= 750) return { label: 'Exceptional',        grade: 'A',  color: '#3B6D11' };
   if (score >= 600) return { label: 'Strong',             grade: 'B',  color: '#6B8F71' };
-  if (score >= 500) return { label: 'Building',           grade: 'C',  color: '#C4A46C' };
-  if (score >= 400) return { label: 'Developing',         grade: 'D',  color: '#C4654A' };
-  return               { label: 'Just started',          grade: '—',  color: '#A09688' };
+  if (score >= 450) return { label: 'Building',           grade: 'C',  color: '#C4A46C' };
+  if (score >= 300) return { label: 'Developing',         grade: 'D',  color: '#C4654A' };
+  if (score >= 150) return { label: 'Starting out',       grade: 'E',  color: '#A09688' };
+  return               { label: 'Just started',          grade: '—',  color: '#C4B8AC' };
 }
 
 module.exports = { calculateScore, getTier, WEIGHTS };
