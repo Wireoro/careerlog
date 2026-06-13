@@ -1034,8 +1034,8 @@ function renderLadder(data) {
   }).join('');
 
   var cacheBadge = data.cached
-    ? '<span style="font-family:'SF Mono',monospace;font-size:9px;padding:2px 8px;background:#EAF3DE;color:#3B6D11;border-radius:4px;margin-left:8px;vertical-align:middle">CACHED</span>'
-    : '<span style="font-family:'SF Mono',monospace;font-size:9px;padding:2px 8px;background:#E6F1FB;color:#185FA5;border-radius:4px;margin-left:8px;vertical-align:middle">FRESH</span>';
+    ? '<span style="font-family:monospace;font-size:9px;padding:2px 8px;background:#EAF3DE;color:#3B6D11;border-radius:4px;margin-left:8px;vertical-align:middle">CACHED</span>'
+    : '<span style="font-family:monospace;font-size:9px;padding:2px 8px;background:#E6F1FB;color:#185FA5;border-radius:4px;margin-left:8px;vertical-align:middle">FRESH</span>';
 
   var refreshBtn = '<button onclick="forceRefreshLadder()" style="font-family:-apple-system,sans-serif;font-size:11px;color:#A09688;background:none;border:none;cursor:pointer;padding:0;margin-top:6px;display:block">&#x21BB; Refresh ladder</button>';
 
