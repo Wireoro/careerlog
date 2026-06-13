@@ -70,24 +70,42 @@ async function recalculateScore() {
       btn.disabled = false; return;
     }
 
-    const res = await fetch('/api/score', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ entries, moodRows, userId: USER_ID }),
-    });
+    // Show progress to user
+    el.innerHTML = '<div style="font-family:-apple-system,sans-serif;font-size:13px;color:#8A8178;padding:8px 0">Found ' + entries.length + ' entries · calling scoring engine…</div>';
+
+    let res;
+    try {
+      res = await fetch('/api/score', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ entries, moodRows, userId: USER_ID }),
+      });
+    } catch(netErr) {
+      document.getElementById('score-loading').style.display = 'none';
+      el.innerHTML = '<div class="error-banner">Network error reaching server: ' + netErr.message + '<br><small>Make sure Render is running a Web Service (not Static Site).</small></div>';
+      btn.disabled = false; return;
+    }
 
     if (!res.ok) {
       const errText = await res.text();
       document.getElementById('score-loading').style.display = 'none';
-      el.innerHTML = '<div class="error-banner">Error (' + res.status + '): ' + errText + '</div>';
+      el.innerHTML = '<div class="error-banner">Server error (' + res.status + '): ' + errText + '<br><small>Check Render → Logs for details.</small></div>';
       btn.disabled = false; return;
     }
 
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch(parseErr) {
+      document.getElementById('score-loading').style.display = 'none';
+      el.innerHTML = '<div class="error-banner">Server returned invalid response. Check Render → Logs.</div>';
+      btn.disabled = false; return;
+    }
+
     document.getElementById('score-loading').style.display = 'none';
 
     if (!data || !data.score) {
-      el.innerHTML = '<div class="error-banner">Scoring returned no data. Check Render logs.</div>';
+      el.innerHTML = '<div class="error-banner">Scoring returned no score value. Server response: ' + JSON.stringify(data) + '</div>';
       btn.disabled = false; return;
     }
 
