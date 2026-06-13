@@ -161,6 +161,88 @@ ${entryList}`;
   }
 });
 
+// ── /api/career-ladder — AI-powered career ladder inference ──
+app.post('/api/career-ladder', async (req, res) => {
+  const { jobTitle } = req.body;
+  if (!jobTitle) return res.status(400).json({ error: 'No job title provided' });
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set' });
+
+  const prompt = `A professional works as: "${jobTitle}"
+
+Infer their full career ladder. Return ONLY raw JSON, no markdown:
+
+{
+  "profession": "Clean profession name",
+  "industry": "Industry sector",
+  "current_level": "Exact level name that matches their job title most closely",
+  "description": "1-2 sentence description of this profession and typical career arc",
+  "tracks": [
+    {
+      "name": "Track name (e.g. Individual Contributor, Management, Clinical, Technical)",
+      "description": "What this track focuses on",
+      "levels": [
+        {
+          "title": "Job title",
+          "rank": 1,
+          "years_typical": "0-2",
+          "is_current": false,
+          "is_entry": true,
+          "description": "What this person does day to day",
+          "key_skills": ["skill1", "skill2", "skill3"],
+          "promotion_criteria": "What it takes to reach the next level"
+        }
+      ]
+    }
+  ],
+  "insights": [
+    "One key insight about progression in this field",
+    "One common mistake people make at this career stage",
+    "One tip for accelerating advancement"
+  ]
+}
+
+Rules:
+- Include ALL levels from entry to top (typically 6-10 levels per track)
+- Most professions have 1-2 tracks (IC vs management, clinical vs admin, etc.)
+- Set is_current: true for the level matching their job title
+- years_typical should reflect real-world timelines
+- Be specific to their actual profession and industry
+- If it's a niche title, infer the most likely profession`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type':      'application/json',
+        'x-api-key':         apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model:      'claude-sonnet-4-20250514',
+        max_tokens: 3000,
+        system:     'You are a career development expert with deep knowledge of career ladders across all industries. Always respond with raw valid JSON only. No markdown, no backticks.',
+        messages:   [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      return res.status(response.status).json({ error: err });
+    }
+
+    const data   = await response.json();
+    const text   = data.content.map(c => c.text || '').join('');
+    const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+    res.json(parsed);
+
+  } catch (err) {
+    console.error('Career ladder error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Fallback — always serve index.html ───────────────────
 app.get('*', (req, res) => {
   const indexPath = path.join(staticDir, 'index.html');

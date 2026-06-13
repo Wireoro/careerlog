@@ -5,7 +5,113 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CareerLog</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+// ── Career Ladder ─────────────────────────────────────────
+function initLadder() {
+  // nothing to auto-load, just wait for user input
+}
+
+function setExample(el) {
+  document.getElementById('ladder-input').value = el.textContent;
+  buildLadder();
+}
+
+async function buildLadder() {
+  const jobTitle = document.getElementById('ladder-input').value.trim();
+  if (!jobTitle) return showToast('Please enter your job title');
+
+  const btn = document.getElementById('ladder-btn');
+  const el  = document.getElementById('ladder-content');
+  btn.disabled = true;
+  el.innerHTML = '';
+  document.getElementById('ladder-loading').style.display = 'flex';
+
+  try {
+    const res = await fetch('/api/career-ladder', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ jobTitle }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Server error ' + res.status);
+    }
+
+    const data = await res.json();
+    document.getElementById('ladder-loading').style.display = 'none';
+    renderLadder(data);
+
+  } catch(err) {
+    document.getElementById('ladder-loading').style.display = 'none';
+    el.innerHTML = '<div class="error-banner">Error: ' + err.message + '</div>';
+    console.error(err);
+  }
+
+  btn.disabled = false;
+}
+
+function renderLadder(data) {
+  const el = document.getElementById('ladder-content');
+  const twoTracks = data.tracks && data.tracks.length > 1;
+
+  const tracksHtml = (data.tracks || []).map(track => {
+    const levelsHtml = [...track.levels].reverse().map((level, idx, arr) => {
+      const isCurrent = level.is_current;
+      const isAbove   = !isCurrent && arr.slice(0, idx).some(l => l.is_current);
+      const dotClass  = isCurrent ? 'current' : isAbove ? 'above' : 'below';
+      const skillClass= isCurrent ? 'current' : 'other';
+      const skillsHtml = (level.key_skills || []).map(s =>
+        '<span class="level-skill ' + skillClass + '">' + s + '</span>'
+      ).join('');
+
+      return `<div class="ladder-level">
+        <div class="level-dot-wrap">
+          <div class="level-dot ${dotClass}">${level.rank}</div>
+          <div class="ladder-line"></div>
+        </div>
+        <div class="level-body">
+          ${isCurrent ? '<div class="level-current-badge"><i class="ti ti-map-pin" style="font-size:9px"></i> YOU ARE HERE</div>' : ''}
+          <div class="level-title ${isCurrent ? 'current' : isAbove ? 'above' : ''}">${level.title}</div>
+          <div class="level-years">${level.years_typical} years typical</div>
+          <div class="level-desc">${level.description}</div>
+          <div class="level-skills">${skillsHtml}</div>
+          ${level.promotion_criteria && !level.is_current && !isAbove ? '<div class="level-promo">→ ' + level.promotion_criteria + '</div>' : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="track-card">
+      <div class="track-head">
+        <div class="track-name">${track.name}</div>
+        <div class="track-desc">${track.description}</div>
+      </div>
+      <div class="ladder-levels">${levelsHtml}</div>
+    </div>`;
+  }).join('');
+
+  const insightsHtml = (data.insights || []).map((tip, i) => {
+    const icons = ['ti-bulb', 'ti-alert-triangle', 'ti-rocket'];
+    return '<div class="insight-item"><i class="ti ' + (icons[i] || 'ti-star') + '"></i>' + tip + '</div>';
+  }).join('');
+
+  el.innerHTML = `
+    <div class="ladder-meta">
+      <div class="ladder-profession">${data.profession} <em>ladder</em></div>
+      <div class="ladder-industry">${data.industry}</div>
+      <div class="ladder-desc">${data.description}</div>
+    </div>
+
+    <div class="tracks-wrap ${twoTracks ? 'two-tracks' : ''}">${tracksHtml}</div>
+
+    ${insightsHtml ? `
+    <div class="ladder-insights">
+      <div class="chart-title" style="margin-bottom:10px">Insights for your stage</div>
+      ${insightsHtml}
+    </div>` : ''}`;
+}
+
+</script>
 <script>
 // ── Career Score tab ──────────────────────────────────────
 
@@ -393,6 +499,53 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .tip-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:0.5px solid #EDE8E0;font-size:13px;color:#2C2520}
 .tip-row:last-child{border-bottom:none}
 .tip-icon{flex-shrink:0;width:20px;color:#C4654A;font-size:15px}
+
+/* ── Career Ladder ───────────────────────────────────────── */
+.ladder-search{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:24px;margin-bottom:20px}
+.ladder-search-row{display:flex;gap:10px;align-items:flex-end}
+.ladder-search-row input{flex:1}
+.ladder-search-btn{padding:9px 20px;background:#2C2520;color:#FAF7F2;border:none;border-radius:8px;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:14px;font-style:italic;cursor:pointer;white-space:nowrap;transition:opacity 0.15s;flex-shrink:0}
+.ladder-search-btn:hover{opacity:0.82}
+.ladder-search-btn:disabled{opacity:0.4;cursor:not-allowed}
+.ladder-examples{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.ladder-example{padding:4px 12px;border:1px solid #EDE8E0;border-radius:20px;font-family:-apple-system,sans-serif;font-size:11px;color:#8A8178;cursor:pointer;background:#FAF7F2;transition:all 0.15s}
+.ladder-example:hover{border-color:#C4654A;color:#C4654A;background:#fff}
+.ladder-meta{margin-bottom:20px}
+.ladder-profession{font-size:20px;font-weight:400;color:#2C2520}
+.ladder-profession em{font-style:italic;color:#C4654A}
+.ladder-industry{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;text-transform:uppercase;letter-spacing:0.08em;margin-top:4px}
+.ladder-desc{font-size:13px;color:#8A8178;margin-top:8px;font-family:-apple-system,sans-serif;line-height:1.6}
+.tracks-wrap{display:grid;gap:20px}
+.tracks-wrap.two-tracks{grid-template-columns:1fr 1fr}
+.track-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;overflow:hidden}
+.track-head{padding:14px 18px;border-bottom:1px solid #EDE8E0;background:#FAF7F2}
+.track-name{font-size:13px;font-weight:500;color:#2C2520}
+.track-desc{font-size:11px;color:#A09688;font-family:-apple-system,sans-serif;margin-top:2px}
+.ladder-levels{padding:16px}
+.ladder-level{display:flex;gap:14px;position:relative;padding-bottom:0}
+.ladder-line{position:absolute;left:15px;top:32px;bottom:0;width:1px;background:#EDE8E0}
+.ladder-level:last-child .ladder-line{display:none}
+.level-dot-wrap{flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding-top:4px}
+.level-dot{width:30px;height:30px;border-radius:50%;border:2px solid #EDE8E0;background:#fff;display:flex;align-items:center;justify-content:center;font-family:'SF Mono',monospace;font-size:10px;color:#A09688;flex-shrink:0;z-index:1;position:relative}
+.level-dot.current{border-color:#C4654A;background:#C4654A;color:#fff;width:36px;height:36px;font-size:11px;font-weight:600;box-shadow:0 0 0 4px rgba(196,101,74,0.15)}
+.level-dot.above{border-color:#EDE8E0;background:#FAF7F2;color:#C4B8AC}
+.level-dot.below{border-color:#DDD5C8;background:#fff;color:#A09688}
+.level-body{flex:1;padding-bottom:20px}
+.level-title{font-size:14px;font-weight:500;color:#2C2520;margin-bottom:2px}
+.level-title.current{color:#C4654A;font-size:15px}
+.level-title.above{color:#C4B8AC}
+.level-years{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;margin-bottom:6px}
+.level-desc{font-size:12px;color:#8A8178;font-family:-apple-system,sans-serif;line-height:1.5;margin-bottom:6px}
+.level-skills{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.level-skill{font-size:10px;padding:2px 8px;border-radius:20px;font-family:-apple-system,sans-serif}
+.level-skill.current{background:rgba(196,101,74,0.1);color:#C4654A;border:1px solid rgba(196,101,74,0.2)}
+.level-skill.other{background:#FAF7F2;color:#8A8178;border:1px solid #EDE8E0}
+.level-promo{font-size:11px;color:#6B8F71;font-family:-apple-system,sans-serif;font-style:italic}
+.level-current-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#C4654A;color:#fff;border-radius:4px;font-size:9px;font-family:'SF Mono',monospace;font-weight:600;letter-spacing:0.06em;margin-bottom:6px}
+.ladder-insights{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:20px;margin-top:16px}
+.insight-item{display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid #EDE8E0;font-size:13px;color:#2C2520;font-family:-apple-system,sans-serif;line-height:1.5}
+.insight-item:last-child{border-bottom:none}
+.insight-item i{color:#C4654A;flex-shrink:0;font-size:15px;margin-top:1px}
 </style>
 </head>
 <body>
@@ -407,6 +560,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
       <li><button class="nav-btn" data-tab="entries"><i class="ti ti-list"></i> Entries</button></li>
       <li><button class="nav-btn" data-tab="insights"><i class="ti ti-sparkles"></i> Insights</button></li>
       <li><button class="nav-btn" data-tab="score"><i class="ti ti-award"></i> Score</button></li>
+      <li><button class="nav-btn" data-tab="ladder"><i class="ti ti-stairs"></i> Ladder</button></li>
       <li><button class="nav-btn" data-tab="analytics"><i class="ti ti-chart-bar"></i> Analytics</button></li>
       <li><button class="nav-btn" data-tab="mood"><i class="ti ti-mood-smile"></i> Mood</button></li>
     </ul>
@@ -626,6 +780,44 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
       <div id="score-content"></div>
     </section>
 
+  
+    <!-- LADDER -->
+    <section id="ladder" class="tab-section">
+      <div class="page-header">
+        <h1>Career <em>Ladder</em></h1>
+        <p class="sans">Enter your current role — see your full path up and down the ladder.</p>
+      </div>
+
+      <div class="ladder-search">
+        <label for="ladder-input">Your current job title</label>
+        <div class="ladder-search-row">
+          <input type="text" id="ladder-input" placeholder="e.g. Senior Product Manager, Staff Engineer, Associate Nurse…" onkeydown="if(event.key==='Enter') buildLadder()">
+          <button class="ladder-search-btn" id="ladder-btn" onclick="buildLadder()">
+            <i class="ti ti-stairs" style="font-style:normal"></i> Build my ladder
+          </button>
+        </div>
+        <div class="ladder-examples">
+          <span class="ladder-example" onclick="setExample(this)">Junior Software Engineer</span>
+          <span class="ladder-example" onclick="setExample(this)">Senior Product Manager</span>
+          <span class="ladder-example" onclick="setExample(this)">Marketing Manager</span>
+          <span class="ladder-example" onclick="setExample(this)">Associate Consultant</span>
+          <span class="ladder-example" onclick="setExample(this)">Staff Nurse</span>
+          <span class="ladder-example" onclick="setExample(this)">Financial Analyst</span>
+          <span class="ladder-example" onclick="setExample(this)">UX Designer</span>
+          <span class="ladder-example" onclick="setExample(this)">Sales Account Executive</span>
+          <span class="ladder-example" onclick="setExample(this)">Data Scientist</span>
+          <span class="ladder-example" onclick="setExample(this)">Associate Attorney</span>
+        </div>
+      </div>
+
+      <div class="loading-row" id="ladder-loading" style="display:none">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="loading-text">Mapping your career ladder…</span>
+      </div>
+
+      <div id="ladder-content"></div>
+    </section>
+
   </main>
 </div>
 <div class="toast" id="toast"></div>
@@ -662,6 +854,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tab === 'entries')   loadEntries();
       if (tab === 'analytics') loadAnalytics();
       if (tab === 'score') loadScore();
+      if (tab === 'ladder') initLadder();
       if (tab === 'mood')      { initMoodSliders(); loadMoodHistory(); }
     });
   });
