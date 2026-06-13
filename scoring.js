@@ -214,6 +214,10 @@ function calculateScore(entries, moodRows) {
     total += contrib;
   });
 
+  // Base entry bonus: every single entry logged adds 0.25 points directly
+  const entryBonus = entries.length * 0.25;
+  total += entryBonus;
+
   const finalScore = Math.round(clamp(total, BASE_SCORE, MAX_SCORE));
 
   return {
@@ -221,6 +225,8 @@ function calculateScore(entries, moodRows) {
     tier:         getTier(finalScore),
     pillars:      pillars,
     contribution: contribution,
+    entryBonus:   Math.round(entryBonus * 100) / 100,
+    entriesCount: entries.length,
     breakdown: {
       consistency:   { raw: pillars.consistency,   weight: WEIGHTS.consistency,   contribution: contribution.consistency   },
       impactQuality: { raw: pillars.impactQuality, weight: WEIGHTS.impactQuality, contribution: contribution.impactQuality },
