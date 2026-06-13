@@ -161,14 +161,52 @@ ${entryList}`;
   }
 });
 
-// ── /api/career-ladder — AI-powered career ladder inference ──
+// ── /api/career-ladder — cached + AI career ladder ──────
 app.post('/api/career-ladder', async (req, res) => {
-  const { jobTitle } = req.body;
+  const { jobTitle, forceRefresh } = req.body;
   if (!jobTitle) return res.status(400).json({ error: 'No job title provided' });
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey      = process.env.ANTHROPIC_API_KEY;
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
   if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set' });
 
+  // Normalise the key: lowercase, trim, collapse spaces
+  const lookupKey = jobTitle.toLowerCase().trim().replace(/\s+/g, ' ');
+
+  // ── Step 1: Check cache ──────────────────────────────────
+  if (supabaseUrl && supabaseKey && !forceRefresh) {
+    try {
+      const cacheRes = await fetch(
+        supabaseUrl + '/rest/v1/career_ladders?lookup_key=eq.' + encodeURIComponent(lookupKey) + '&limit=1',
+        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+      );
+      const rows = await cacheRes.json();
+
+      if (rows && rows.length > 0) {
+        console.log('Cache HIT for:', lookupKey, '— served', rows[0].times_served, 'times');
+
+        // Increment times_served counter
+        fetch(supabaseUrl + '/rest/v1/career_ladders?lookup_key=eq.' + encodeURIComponent(lookupKey), {
+          method:  'PATCH',
+          headers: {
+            'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ times_served: rows[0].times_served + 1, updated_at: new Date().toISOString() }),
+        }).catch(() => {});
+
+        return res.json({ ...rows[0].ladder_data, cached: true, times_served: rows[0].times_served });
+      }
+
+      console.log('Cache MISS for:', lookupKey, '— calling Claude');
+    } catch (cacheErr) {
+      console.error('Cache check failed:', cacheErr.message, '— falling through to Claude');
+    }
+  }
+
+  // ── Step 2: Call Claude ──────────────────────────────────
   const prompt = `A professional works as: "${jobTitle}"
 
 Infer their full career ladder. Return ONLY raw JSON, no markdown:
@@ -209,7 +247,7 @@ Rules:
 - Set is_current: true for the level matching their job title
 - years_typical should reflect real-world timelines
 - Be specific to their actual profession and industry
-- If it's a niche title, infer the most likely profession`;
+- If it is a niche title, infer the most likely profession`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -235,7 +273,30 @@ Rules:
     const data   = await response.json();
     const text   = data.content.map(c => c.text || '').join('');
     const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
-    res.json(parsed);
+
+    // ── Step 3: Save to cache ────────────────────────────────
+    if (supabaseUrl && supabaseKey) {
+      fetch(supabaseUrl + '/rest/v1/career_ladders', {
+        method:  'POST',
+        headers: {
+          'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify({
+          lookup_key:  lookupKey,
+          job_title:   jobTitle,
+          profession:  parsed.profession,
+          industry:    parsed.industry,
+          ladder_data: parsed,
+          times_served: 1,
+        }),
+      })
+      .then(() => console.log('Cached ladder for:', lookupKey))
+      .catch(err => console.error('Failed to cache ladder:', err.message));
+    }
+
+    res.json({ ...parsed, cached: false });
 
   } catch (err) {
     console.error('Career ladder error:', err.message);

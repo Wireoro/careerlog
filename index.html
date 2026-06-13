@@ -959,7 +959,13 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-async function buildLadder() {
+async function forceRefreshLadder() {
+  var jobTitle = document.getElementById('ladder-input').value.trim();
+  if (!jobTitle) return;
+  await buildLadder(true);
+}
+
+async function buildLadder(forceRefresh) {
   var jobTitle = document.getElementById('ladder-input').value.trim();
   if (!jobTitle) { showToast('Please enter your job title'); return; }
   var btn = document.getElementById('ladder-btn');
@@ -971,7 +977,7 @@ async function buildLadder() {
     var res = await fetch('/api/career-ladder', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jobTitle: jobTitle })
+      body: JSON.stringify({ jobTitle: jobTitle, forceRefresh: !!forceRefresh })
     });
     if (!res.ok) {
       var err = await res.json();
@@ -1027,11 +1033,18 @@ function renderLadder(data) {
     return '<div class="ladder-insight-row"><i class="ti ' + (iconList[i] || 'ti-star') + '"></i>' + tip + '</div>';
   }).join('');
 
+  var cacheBadge = data.cached
+    ? '<span style="font-family:'SF Mono',monospace;font-size:9px;padding:2px 8px;background:#EAF3DE;color:#3B6D11;border-radius:4px;margin-left:8px;vertical-align:middle">CACHED</span>'
+    : '<span style="font-family:'SF Mono',monospace;font-size:9px;padding:2px 8px;background:#E6F1FB;color:#185FA5;border-radius:4px;margin-left:8px;vertical-align:middle">FRESH</span>';
+
+  var refreshBtn = '<button onclick="forceRefreshLadder()" style="font-family:-apple-system,sans-serif;font-size:11px;color:#A09688;background:none;border:none;cursor:pointer;padding:0;margin-top:6px;display:block">&#x21BB; Refresh ladder</button>';
+
   el.innerHTML =
     '<div class="ladder-meta">' +
-    '<div class="ladder-profession">' + data.profession + ' <em>ladder</em></div>' +
+    '<div class="ladder-profession">' + data.profession + ' <em>ladder</em>' + cacheBadge + '</div>' +
     '<div class="ladder-industry-tag">' + data.industry + '</div>' +
-    '<div class="ladder-desc">' + data.description + '</div></div>' +
+    '<div class="ladder-desc">' + data.description + '</div>' +
+    refreshBtn + '</div>' +
     '<div class="tracks-wrap ' + (twoTracks ? 'tracks-two' : '') + '">' + tracksHtml + '</div>' +
     (insightsHtml ? '<div class="ladder-insights-box"><div class="chart-title" style="margin-bottom:10px">Insights for your stage</div>' + insightsHtml + '</div>' : '');
 }
