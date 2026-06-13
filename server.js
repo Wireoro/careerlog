@@ -16,16 +16,83 @@ console.log('Serving static files from:', staticDir);
 console.log('Anthropic key set:', !!process.env.ANTHROPIC_API_KEY);
 
 // ── /api/score — private scoring engine ──────────────────
-// Accepts entries + moodRows, returns full score breakdown.
-// scoring.js stays on the server — browser never sees the logic.
-app.post('/api/score', (req, res) => {
-  const { entries, moodRows } = req.body;
+// Calculates score, saves it to Supabase, returns result.
+app.post('/api/score', async (req, res) => {
+  const { entries, moodRows, userId } = req.body;
   if (!entries) return res.status(400).json({ error: 'No entries provided' });
+
   try {
     const result = calculateScore(entries || [], moodRows || []);
+    const uid    = userId || 'demo_user';
+
+    // Save score to Supabase career_scores table
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+    if (supabaseUrl && supabaseKey) {
+      const bd = result.breakdown;
+      const payload = {
+        user_id:          uid,
+        score:            result.score,
+        tier_label:       result.tier.label,
+        tier_grade:       result.tier.grade,
+        tier_color:       result.tier.color,
+        consistency_raw:  bd.consistency.raw,
+        impact_raw:       bd.impactQuality.raw,
+        category_raw:     bd.categoryMix.raw,
+        awareness_raw:    bd.selfAwareness.raw,
+        depth_raw:        bd.entryDepth.raw,
+        consistency_pts:  bd.consistency.contribution,
+        impact_pts:       bd.impactQuality.contribution,
+        category_pts:     bd.categoryMix.contribution,
+        awareness_pts:    bd.selfAwareness.contribution,
+        depth_pts:        bd.entryDepth.contribution,
+        entry_bonus:      result.entryBonus || 0,
+        entries_count:    entries.length,
+        mood_count:       (moodRows || []).length,
+        updated_at:       new Date().toISOString(),
+      };
+
+      await fetch(supabaseUrl + '/rest/v1/career_scores', {
+        method:  'POST',
+        headers: {
+          'apikey':        supabaseKey,
+          'Authorization': 'Bearer ' + supabaseKey,
+          'Content-Type':  'application/json',
+          'Prefer':        'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify(payload),
+      }).catch(err => console.error('Failed to save score to Supabase:', err.message));
+
+      console.log('Score saved to Supabase:', result.score, 'for user:', uid);
+    }
+
     res.json(result);
   } catch (err) {
     console.error('Scoring error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── /api/score/load — load saved score from Supabase ────
+app.get('/api/score/load', async (req, res) => {
+  const userId      = req.query.userId || 'demo_user';
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: 'Supabase credentials not set' });
+  }
+
+  try {
+    const r = await fetch(
+      supabaseUrl + '/rest/v1/career_scores?user_id=eq.' + userId + '&limit=1',
+      { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+    );
+    const rows = await r.json();
+    if (!rows || rows.length === 0) return res.json(null);
+    res.json(rows[0]);
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -106,5 +173,8 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log('CareerLog running on port ' + PORT);
-  console.log('index.html found:', fs.existsSync(path.join(staticDir, 'index.html')));
+  console.log('Anthropic key set:  ', !!process.env.ANTHROPIC_API_KEY);
+  console.log('Supabase URL set:   ', !!process.env.SUPABASE_URL);
+  console.log('Supabase key set:   ', !!process.env.SUPABASE_ANON_KEY);
+  console.log('index.html found:   ', fs.existsSync(path.join(staticDir, 'index.html')));
 });
