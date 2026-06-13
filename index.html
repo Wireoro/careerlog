@@ -5,7 +5,111 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CareerLog</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+// ── Career Score tab ──────────────────────────────────────
+async function loadScore() {
+  const el = document.getElementById('score-content');
+  el.innerHTML = '';
+  document.getElementById('score-loading').style.display = 'flex';
+
+  try {
+    const [entries, moodRows] = await Promise.all([
+      sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.asc&limit=500'),
+      sbFetch('weekly_mood?user_id=eq.' + USER_ID + '&order=week_of.asc&limit=200'),
+    ]);
+
+    if (!entries || entries.length === 0) {
+      document.getElementById('score-loading').style.display = 'none';
+      el.innerHTML = '<div class="empty-state"><i class="ti ti-award"></i>Write at least one entry to get your career score.</div>';
+      return;
+    }
+
+    const res = await fetch('/api/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries, moodRows }),
+    });
+    if (!res.ok) throw new Error('Score API error: ' + res.status);
+    const data = await res.json();
+
+    document.getElementById('score-loading').style.display = 'none';
+    renderScore(data, entries.length);
+
+  } catch(err) {
+    document.getElementById('score-loading').style.display = 'none';
+    el.innerHTML = '<div class="error-banner">Error: ' + err.message + '</div>';
+    console.error(err);
+  }
+}
+
+function renderScore(data, entryCount) {
+  const el    = document.getElementById('score-content');
+  const score = data.score;
+  const tier  = data.tier;
+  const bd    = data.breakdown;
+  const pct   = Math.round(((score - 300) / 550) * 100);
+
+  const PILLAR_LABELS = {
+    consistency:   { label: 'Consistency',    icon: 'ti-calendar-stats', desc: 'How regularly you log entries' },
+    impactQuality: { label: 'Impact quality', icon: 'ti-trophy',         desc: 'Quality and impact level of your entries' },
+    categoryMix:   { label: 'Category mix',   icon: 'ti-chart-pie',      desc: 'Variety across entry types' },
+    selfAwareness: { label: 'Self-awareness', icon: 'ti-mood-smile',     desc: 'Weekly mood and emotion tracking' },
+    entryDepth:    { label: 'Entry depth',    icon: 'ti-pencil',         desc: 'Detail, word count and tags per entry' },
+  };
+
+  // Tips based on which pillar is lowest
+  const sortedPillars = Object.entries(bd).sort((a,b) => a[1].contribution - b[1].contribution);
+  const weakest = sortedPillars[0][0];
+  const TIPS = {
+    consistency:   ['Log at least 3 entries per week', 'Build a streak — consistency is worth 25% of your score', 'Avoid gaps longer than a week'],
+    impactQuality: ['Aim for impact level 4–5 entries — they score 3–6× more', 'Always include a number or metric in your content', 'Focus on outcomes, not just activities'],
+    categoryMix:   ['Use all 6 categories for the highest mix score', 'Log feedback and lessons — they get extra points', 'Avoid logging only one type of entry'],
+    selfAwareness: ['Log your weekly mood every Monday', 'Always select a primary emotion', 'Fill in both the highlight and lowlight fields'],
+    entryDepth:    ['Write at least 100 words per entry for bonus points', 'Add 3+ tags to every entry', 'Short entries under 30 words lose points'],
+  };
+
+  const tipsHtml = (TIPS[weakest] || []).map(t =>
+    '<div class="tip-row"><i class="ti ti-arrow-up-right tip-icon" aria-hidden="true"></i>' + t + '</div>'
+  ).join('');
+
+  const pillarsHtml = Object.entries(PILLAR_LABELS).map(([key, meta]) => {
+    const contrib = bd[key] ? bd[key].contribution : 0;
+    const maxContrib = 550 * (bd[key] ? bd[key].weight : 0.2);
+    const pillPct = maxContrib > 0 ? Math.round((contrib / maxContrib) * 100) : 0;
+    return `<div class="pillar-card">
+      <div class="pillar-head">
+        <div class="pillar-name"><i class="ti ${meta.icon}" aria-hidden="true" style="font-size:14px;vertical-align:-2px;margin-right:6px"></i>${meta.label}</div>
+        <div class="pillar-pts">+${contrib} pts</div>
+      </div>
+      <div class="pillar-bar-track"><div class="pillar-bar-fill" style="width:${pillPct}%"></div></div>
+      <div class="pillar-desc">${meta.desc}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="score-hero">
+      <div class="score-number" style="color:${tier.color}">${score}</div>
+      <div class="score-grade" style="color:${tier.color}">${tier.grade}</div>
+      <div class="score-tier">${tier.label} · based on ${entryCount} entries</div>
+      <div class="score-gauge">
+        <div class="gauge-track"><div class="gauge-fill" style="width:${pct}%;background:${tier.color}"></div></div>
+        <div class="gauge-labels"><span>300</span><span>400</span><span>500</span><span>600</span><span>700</span><span>850</span></div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <div class="page-header" style="margin-bottom:12px"><h1 style="font-size:18px">Score <em>breakdown</em></h1></div>
+      <div class="pillars-grid">${pillarsHtml}</div>
+    </div>
+
+    <div class="score-tips">
+      <div class="page-header" style="margin-bottom:10px"><h1 style="font-size:16px">How to <em>improve</em></h1></div>
+      <p style="font-size:12px;color:#A09688;font-family:-apple-system,sans-serif;margin-bottom:10px">Your lowest pillar is <strong style="color:#C4654A">${PILLAR_LABELS[weakest].label}</strong> — focus here for the biggest score jump.</p>
+      ${tipsHtml}
+    </div>`;
+}
+
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;background:#FAF7F2;color:#2C2520;min-height:100vh;overflow-x:hidden}
@@ -189,6 +293,27 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
   .chart-card.full{grid-column:auto}
   .emotion-grid{grid-template-columns:repeat(4,1fr)}
 }
+
+.score-hero{background:var(--color-background-primary);border:1px solid #EDE8E0;border-radius:12px;padding:28px 24px;margin-bottom:16px;text-align:center}
+.score-number{font-size:72px;font-weight:300;line-height:1;letter-spacing:-0.04em;margin-bottom:6px}
+.score-tier{font-size:14px;color:#8A8178;margin-bottom:20px}
+.score-gauge{max-width:400px;margin:0 auto 20px}
+.gauge-track{height:10px;background:#EDE8E0;border-radius:10px;overflow:hidden;margin-bottom:6px}
+.gauge-fill{height:100%;border-radius:10px;transition:width 1s ease}
+.gauge-labels{display:flex;justify-content:space-between;font-family:'SF Mono',monospace;font-size:10px;color:#A09688}
+.score-grade{font-size:28px;font-weight:300;margin-top:4px}
+.pillars-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.pillar-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:16px}
+.pillar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pillar-name{font-size:13px;font-weight:500;color:#2C2520}
+.pillar-pts{font-family:'SF Mono',monospace;font-size:12px;color:#C4654A}
+.pillar-bar-track{height:6px;background:#EDE8E0;border-radius:6px;overflow:hidden;margin-bottom:6px}
+.pillar-bar-fill{height:100%;border-radius:6px;background:#C4654A;transition:width 0.8s ease}
+.pillar-desc{font-size:11px;color:#A09688;font-family:-apple-system,sans-serif}
+.score-tips{background:#FAF7F2;border:1px solid #EDE8E0;border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.tip-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:0.5px solid #EDE8E0;font-size:13px;color:#2C2520}
+.tip-row:last-child{border-bottom:none}
+.tip-icon{flex-shrink:0;width:20px;color:#C4654A;font-size:15px}
 </style>
 </head>
 <body>
@@ -202,6 +327,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
       <li><button class="nav-btn active" data-tab="write"><i class="ti ti-edit"></i> Write</button></li>
       <li><button class="nav-btn" data-tab="entries"><i class="ti ti-list"></i> Entries</button></li>
       <li><button class="nav-btn" data-tab="insights"><i class="ti ti-sparkles"></i> Insights</button></li>
+      <li><button class="nav-btn" data-tab="score"><i class="ti ti-award"></i> Score</button></li>
       <li><button class="nav-btn" data-tab="analytics"><i class="ti ti-chart-bar"></i> Analytics</button></li>
       <li><button class="nav-btn" data-tab="mood"><i class="ti ti-mood-smile"></i> Mood</button></li>
     </ul>
@@ -404,6 +530,20 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
       </div>
     </section>
 
+  
+    <!-- SCORE -->
+    <section id="score" class="tab-section">
+      <div class="page-header">
+        <h1>Career <em>Score</em></h1>
+        <p class="sans">Your track record, quantified.</p>
+      </div>
+      <div class="loading-row" id="score-loading" style="display:none">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="loading-text">Calculating your career score…</span>
+      </div>
+      <div id="score-content"></div>
+    </section>
+
   </main>
 </div>
 <div class="toast" id="toast"></div>
@@ -439,6 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById(tab).classList.add('active');
       if (tab === 'entries')   loadEntries();
       if (tab === 'analytics') loadAnalytics();
+      if (tab === 'score') loadScore();
       if (tab === 'mood')      { initMoodSliders(); loadMoodHistory(); }
     });
   });

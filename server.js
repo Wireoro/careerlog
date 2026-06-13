@@ -1,20 +1,36 @@
-const express = require('express');
-const fetch   = require('node-fetch');
-const path    = require('path');
-const app     = express();
-const PORT    = process.env.PORT || 3000;
+const express  = require('express');
+const fetch    = require('node-fetch');
+const path     = require('path');
+const fs       = require('fs');
+const { calculateScore } = require('./scoring'); // private scoring engine
+const app      = express();
+const PORT     = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Serve static files — works whether index.html is in /public or root
+// Serve static files from public/ or root
 const publicPath = path.join(__dirname, 'public');
-const rootPath   = __dirname;
-const fs         = require('fs');
-const staticDir  = fs.existsSync(publicPath) ? publicPath : rootPath;
+const staticDir  = fs.existsSync(publicPath) ? publicPath : __dirname;
 app.use(express.static(staticDir));
 console.log('Serving static files from:', staticDir);
+console.log('Anthropic key set:', !!process.env.ANTHROPIC_API_KEY);
 
-// ── /api/insights — full career analysis via Claude ──────
+// ── /api/score — private scoring engine ──────────────────
+// Accepts entries + moodRows, returns full score breakdown.
+// scoring.js stays on the server — browser never sees the logic.
+app.post('/api/score', (req, res) => {
+  const { entries, moodRows } = req.body;
+  if (!entries) return res.status(400).json({ error: 'No entries provided' });
+  try {
+    const result = calculateScore(entries || [], moodRows || []);
+    res.json(result);
+  } catch (err) {
+    console.error('Scoring error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── /api/insights — Claude AI career analysis ─────────────
 app.post('/api/insights', async (req, res) => {
   const { entries } = req.body;
   if (!entries || !entries.length) return res.status(400).json({ error: 'No entries provided' });
@@ -57,19 +73,23 @@ ${entryList}`;
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model:      'claude-sonnet-4-20250514',
         max_tokens: 2000,
-        system: 'You are a professional career coach AI. Always respond with raw valid JSON only. No markdown, no backticks, no explanation.',
-        messages: [{ role: 'user', content: prompt }],
+        system:     'You are a professional career coach AI. Always respond with raw valid JSON only. No markdown, no backticks, no explanation.',
+        messages:   [{ role: 'user', content: prompt }],
       }),
     });
-    if (!response.ok) { const err = await response.text(); console.error('Claude error:', err); return res.status(response.status).json({ error: err }); }
+    if (!response.ok) {
+      const err = await response.text();
+      console.error('Claude error:', err);
+      return res.status(response.status).json({ error: err });
+    }
     const data   = await response.json();
     const text   = data.content.map(c => c.text || '').join('');
     const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
     res.json(parsed);
   } catch (err) {
-    console.error('Server error:', err.message);
+    console.error('Insights error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -80,13 +100,11 @@ app.get('*', (req, res) => {
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(404).send('index.html not found. Make sure it is in the public/ folder or repo root.');
+    res.status(404).send('index.html not found. Place it in the public/ folder or repo root.');
   }
 });
 
 app.listen(PORT, () => {
   console.log('CareerLog running on port ' + PORT);
-  console.log('Anthropic key set:', !!process.env.ANTHROPIC_API_KEY);
-  console.log('Static dir:', staticDir);
-  console.log('index.html exists:', fs.existsSync(path.join(staticDir, 'index.html')));
+  console.log('index.html found:', fs.existsSync(path.join(staticDir, 'index.html')));
 });

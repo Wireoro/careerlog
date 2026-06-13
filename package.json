@@ -1,7 +1,7 @@
 {
   "name": "careerlog",
   "version": "1.0.0",
-  "description": "Career journal with AI insights",
+  "description": "Career journal with AI insights and career scoring",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
