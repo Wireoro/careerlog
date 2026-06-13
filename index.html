@@ -6,233 +6,49 @@
 <title>CareerLog</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
 <script>
-// ── Career Ladder ─────────────────────────────────────────
-function initLadder() {
-  // nothing to auto-load, just wait for user input
-}
-
-function setExample(el) {
-  document.getElementById('ladder-input').value = el.textContent;
-  buildLadder();
-}
-
-async function buildLadder() {
-  const jobTitle = document.getElementById('ladder-input').value.trim();
-  if (!jobTitle) return showToast('Please enter your job title');
-
-  const btn = document.getElementById('ladder-btn');
-  const el  = document.getElementById('ladder-content');
-  btn.disabled = true;
-  el.innerHTML = '';
-  document.getElementById('ladder-loading').style.display = 'flex';
-
-  try {
-    const res = await fetch('/api/career-ladder', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ jobTitle }),
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Server error ' + res.status);
-    }
-
-    const data = await res.json();
-    document.getElementById('ladder-loading').style.display = 'none';
-    renderLadder(data);
-
-  } catch(err) {
-    document.getElementById('ladder-loading').style.display = 'none';
-    el.innerHTML = '<div class="error-banner">Error: ' + err.message + '</div>';
-    console.error(err);
-  }
-
-  btn.disabled = false;
-}
-
-function renderLadder(data) {
-  const el = document.getElementById('ladder-content');
-  const twoTracks = data.tracks && data.tracks.length > 1;
-
-  const tracksHtml = (data.tracks || []).map(track => {
-    const levelsHtml = [...track.levels].reverse().map((level, idx, arr) => {
-      const isCurrent = level.is_current;
-      const isAbove   = !isCurrent && arr.slice(0, idx).some(l => l.is_current);
-      const dotClass  = isCurrent ? 'current' : isAbove ? 'above' : 'below';
-      const skillClass= isCurrent ? 'current' : 'other';
-      const skillsHtml = (level.key_skills || []).map(s =>
-        '<span class="level-skill ' + skillClass + '">' + s + '</span>'
-      ).join('');
-
-      return `<div class="ladder-level">
-        <div class="level-dot-wrap">
-          <div class="level-dot ${dotClass}">${level.rank}</div>
-          <div class="ladder-line"></div>
-        </div>
-        <div class="level-body">
-          ${isCurrent ? '<div class="level-current-badge"><i class="ti ti-map-pin" style="font-size:9px"></i> YOU ARE HERE</div>' : ''}
-          <div class="level-title ${isCurrent ? 'current' : isAbove ? 'above' : ''}">${level.title}</div>
-          <div class="level-years">${level.years_typical} years typical</div>
-          <div class="level-desc">${level.description}</div>
-          <div class="level-skills">${skillsHtml}</div>
-          ${level.promotion_criteria && !level.is_current && !isAbove ? '<div class="level-promo">→ ' + level.promotion_criteria + '</div>' : ''}
-        </div>
-      </div>`;
-    }).join('');
-
-    return `<div class="track-card">
-      <div class="track-head">
-        <div class="track-name">${track.name}</div>
-        <div class="track-desc">${track.description}</div>
-      </div>
-      <div class="ladder-levels">${levelsHtml}</div>
-    </div>`;
-  }).join('');
-
-  const insightsHtml = (data.insights || []).map((tip, i) => {
-    const icons = ['ti-bulb', 'ti-alert-triangle', 'ti-rocket'];
-    return '<div class="insight-item"><i class="ti ' + (icons[i] || 'ti-star') + '"></i>' + tip + '</div>';
-  }).join('');
-
-  el.innerHTML = `
-    <div class="ladder-meta">
-      <div class="ladder-profession">${data.profession} <em>ladder</em></div>
-      <div class="ladder-industry">${data.industry}</div>
-      <div class="ladder-desc">${data.description}</div>
-    </div>
-
-    <div class="tracks-wrap ${twoTracks ? 'two-tracks' : ''}">${tracksHtml}</div>
-
-    ${insightsHtml ? `
-    <div class="ladder-insights">
-      <div class="chart-title" style="margin-bottom:10px">Insights for your stage</div>
-      ${insightsHtml}
-    </div>` : ''}`;
-}
-
 // ── Career Score tab ──────────────────────────────────────
-
-// On tab open: try to load saved score first, show it instantly
 async function loadScore() {
   const el = document.getElementById('score-content');
   el.innerHTML = '';
   document.getElementById('score-loading').style.display = 'flex';
 
   try {
-    const res  = await fetch('/api/score/load?userId=' + USER_ID);
-    const saved = await res.json();
-    document.getElementById('score-loading').style.display = 'none';
-
-    if (saved && saved.score) {
-      // Reconstruct data shape from saved row
-      const data = {
-        score:       saved.score,
-        entryBonus:  saved.entry_bonus,
-        entriesCount: saved.entries_count,
-        tier: { label: saved.tier_label, grade: saved.tier_grade, color: saved.tier_color },
-        breakdown: {
-          consistency:   { contribution: saved.consistency_pts, raw: saved.consistency_raw, weight: 0.25 },
-          impactQuality: { contribution: saved.impact_pts,      raw: saved.impact_raw,      weight: 0.25 },
-          categoryMix:   { contribution: saved.category_pts,    raw: saved.category_raw,    weight: 0.20 },
-          selfAwareness: { contribution: saved.awareness_pts,   raw: saved.awareness_raw,   weight: 0.15 },
-          entryDepth:    { contribution: saved.depth_pts,       raw: saved.depth_raw,       weight: 0.15 },
-        }
-      };
-      renderScore(data, saved.entries_count || 0, saved.updated_at);
-    } else {
-      // No saved score yet — prompt user to calculate
-      el.innerHTML = '<div class="empty-state"><i class="ti ti-award"></i>No score yet — click <strong>Calculate my score</strong> above to generate it.</div>';
-    }
-  } catch(err) {
-    document.getElementById('score-loading').style.display = 'none';
-    el.innerHTML = '<div class="empty-state"><i class="ti ti-award"></i>Click <strong>Calculate my score</strong> above to generate your score.</div>';
-  }
-}
-
-// On button click: fetch fresh entries, recalculate, save to DB
-async function recalculateScore() {
-  const el  = document.getElementById('score-content');
-  const btn = document.getElementById('score-calc-btn');
-  el.innerHTML = '';
-  btn.disabled = true;
-  document.getElementById('score-loading').style.display = 'flex';
-
-  try {
-    let entries = [], moodRows = [];
-    try {
-      entries  = await sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.asc&limit=500');
-      moodRows = await sbFetch('weekly_mood?user_id=eq.'     + USER_ID + '&order=week_of.asc&limit=200');
-    } catch(fetchErr) {
-      document.getElementById('score-loading').style.display = 'none';
-      el.innerHTML = '<div class="error-banner">Could not load entries: ' + fetchErr.message + '</div>';
-      btn.disabled = false; return;
-    }
+    const [entries, moodRows] = await Promise.all([
+      sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.asc&limit=500'),
+      sbFetch('weekly_mood?user_id=eq.' + USER_ID + '&order=week_of.asc&limit=200'),
+    ]);
 
     if (!entries || entries.length === 0) {
       document.getElementById('score-loading').style.display = 'none';
-      el.innerHTML = '<div class="empty-state"><i class="ti ti-award"></i>Write at least one entry first.</div>';
-      btn.disabled = false; return;
+      el.innerHTML = '<div class="empty-state"><i class="ti ti-award"></i>Write at least one entry to get your career score.</div>';
+      return;
     }
 
-    // Show progress to user
-    el.innerHTML = '<div style="font-family:-apple-system,sans-serif;font-size:13px;color:#8A8178;padding:8px 0">Found ' + entries.length + ' entries · calling scoring engine…</div>';
-
-    let res;
-    try {
-      res = await fetch('/api/score', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ entries, moodRows, userId: USER_ID }),
-      });
-    } catch(netErr) {
-      document.getElementById('score-loading').style.display = 'none';
-      el.innerHTML = '<div class="error-banner">Network error reaching server: ' + netErr.message + '<br><small>Make sure Render is running a Web Service (not Static Site).</small></div>';
-      btn.disabled = false; return;
-    }
-
-    if (!res.ok) {
-      const errText = await res.text();
-      document.getElementById('score-loading').style.display = 'none';
-      el.innerHTML = '<div class="error-banner">Server error (' + res.status + '): ' + errText + '<br><small>Check Render → Logs for details.</small></div>';
-      btn.disabled = false; return;
-    }
-
-    let data;
-    try {
-      data = await res.json();
-    } catch(parseErr) {
-      document.getElementById('score-loading').style.display = 'none';
-      el.innerHTML = '<div class="error-banner">Server returned invalid response. Check Render → Logs.</div>';
-      btn.disabled = false; return;
-    }
+    const res = await fetch('/api/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries, moodRows }),
+    });
+    if (!res.ok) throw new Error('Score API error: ' + res.status);
+    const data = await res.json();
 
     document.getElementById('score-loading').style.display = 'none';
-
-    if (!data || !data.score) {
-      el.innerHTML = '<div class="error-banner">Scoring returned no score value. Server response: ' + JSON.stringify(data) + '</div>';
-      btn.disabled = false; return;
-    }
-
-    renderScore(data, entries.length, new Date().toISOString());
-    showToast('Score calculated and saved!');
+    renderScore(data, entries.length);
 
   } catch(err) {
     document.getElementById('score-loading').style.display = 'none';
-    el.innerHTML = '<div class="error-banner">Unexpected error: ' + err.message + '</div>';
+    el.innerHTML = '<div class="error-banner">Error: ' + err.message + '</div>';
     console.error(err);
   }
-  btn.disabled = false;
 }
 
-function renderScore(data, entryCount, calculatedAt) {
+function renderScore(data, entryCount) {
   const el    = document.getElementById('score-content');
   const score = data.score;
   const tier  = data.tier;
   const bd    = data.breakdown;
-  const pct   = Math.round((score / 1000) * 100);
+  const pct   = Math.round(((score - 300) / 550) * 100);
 
   const PILLAR_LABELS = {
     consistency:   { label: 'Consistency',    icon: 'ti-calendar-stats', desc: 'How regularly you log entries' },
@@ -278,7 +94,7 @@ function renderScore(data, entryCount, calculatedAt) {
       <div class="score-tier">${tier.label} · based on ${entryCount} entries</div>
       <div class="score-gauge">
         <div class="gauge-track"><div class="gauge-fill" style="width:${pct}%;background:${tier.color}"></div></div>
-        <div class="gauge-labels"><span>0</span><span>200</span><span>400</span><span>600</span><span>800</span><span>1000</span></div>
+        <div class="gauge-labels"><span>300</span><span>400</span><span>500</span><span>600</span><span>700</span><span>850</span></div>
       </div>
     </div>
 
@@ -294,6 +110,528 @@ function renderScore(data, entryCount, calculatedAt) {
     </div>`;
 }
 
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;background:#FAF7F2;color:#2C2520;min-height:100vh;overflow-x:hidden}
+.sans{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif}
+.mono{font-family:'SF Mono','Menlo','Monaco','Courier New',monospace}
+#app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:#fff;border-right:1px solid #DDD5C8;padding:32px 16px;display:flex;flex-direction:column;gap:28px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo h1{font-size:22px;font-weight:400;color:#2C2520;letter-spacing:-0.01em;padding:0 8px}
+.logo h1 em{font-style:italic;color:#C4654A}
+.logo-sub{font-family:'SF Mono','Menlo',monospace;font-size:10px;color:#A09688;letter-spacing:0.04em;padding:4px 8px 0}
+.nav-links{list-style:none;display:flex;flex-direction:column;gap:2px}
+.nav-btn{width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border:none;border-radius:8px;background:transparent;color:#8A8178;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:14px;cursor:pointer;text-align:left;transition:background 0.12s,color 0.12s}
+.nav-btn:hover{background:#FAF7F2;color:#2C2520}
+.nav-btn.active{background:rgba(196,101,74,0.08);color:#C4654A;font-style:italic}
+.nav-btn i{font-size:16px}
+.main{padding:32px 40px 80px;max-width:1000px}
+.tab-section{display:none}
+.tab-section.active{display:block}
+.page-header{margin-bottom:24px}
+.page-header h1{font-size:28px;font-weight:400;color:#2C2520;letter-spacing:-0.01em}
+.page-header h1 em{font-style:italic;color:#C4654A}
+.page-header p{font-size:13px;color:#8A8178;margin-top:4px}
+.stats-bar{display:flex;gap:0;margin-bottom:28px;border:1px solid #DDD5C8;border-radius:12px;overflow:hidden;background:#fff}
+.stat{flex:1;padding:16px 20px;border-right:1px solid #EDE8E0;text-align:center}
+.stat:last-child{border-right:none}
+.stat-val{font-size:26px;font-weight:300;color:#C4654A;display:block;letter-spacing:-0.02em}
+.stat-label{font-family:-apple-system,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#A09688;margin-top:2px;display:block}
+.form-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:24px}
+.form-group{margin-bottom:18px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+label{display:block;font-family:'SF Mono','Menlo',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;margin-bottom:7px}
+label .muted{color:#C4B8AC}
+input[type="text"],input[type="date"],textarea{width:100%;padding:9px 13px;border:1px solid #DDD5C8;border-radius:8px;background:#FAF7F2;color:#2C2520;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:14px;outline:none;transition:border-color 0.15s,background 0.15s}
+input:focus,textarea:focus{border-color:#C4654A;background:#fff}
+textarea{min-height:110px;resize:vertical;line-height:1.6}
+.category-grid{display:flex;gap:6px;flex-wrap:wrap}
+.cat-btn{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;border:1px solid #DDD5C8;background:#fff;font-family:-apple-system,sans-serif;font-size:11px;color:#6B6560;cursor:pointer;transition:all 0.15s;user-select:none}
+.cat-btn:hover{border-color:#C4654A;color:#C4654A}
+.cat-btn i{font-size:13px}
+.cat-btn.selected[data-cat="win"]{background:#C4654A;border-color:#C4654A;color:#fff}
+.cat-btn.selected[data-cat="metric"]{background:#5B7B8A;border-color:#5B7B8A;color:#fff}
+.cat-btn.selected[data-cat="feedback"]{background:#8B6BAE;border-color:#8B6BAE;color:#fff}
+.cat-btn.selected[data-cat="decision"]{background:#6B8F71;border-color:#6B8F71;color:#fff}
+.cat-btn.selected[data-cat="lesson"]{background:#C4A46C;border-color:#C4A46C;color:#fff}
+.cat-btn.selected[data-cat="challenge"]{background:#A09688;border-color:#A09688;color:#fff}
+.impact-row{display:flex;gap:8px}
+.impact-dot{width:34px;height:34px;border-radius:50%;border:1px solid #DDD5C8;background:#FAF7F2;color:#8A8178;font-family:'SF Mono',monospace;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.12s}
+.impact-dot:hover{border-color:#C4654A;color:#C4654A}
+.impact-dot.selected{background:#C4654A;border-color:#C4654A;color:#fff}
+.impact-label{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;margin-top:5px;letter-spacing:0.02em}
+.tags-input{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 10px;border:1px solid #DDD5C8;border-radius:8px;background:#FAF7F2;cursor:text;min-height:40px;transition:border-color 0.15s}
+.tags-input:focus-within{border-color:#C4654A;background:#fff}
+.tags-input input{border:none;background:transparent;outline:none;padding:0;min-width:100px;flex:1;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:13px;color:#2C2520}
+.tag-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:#EDE8E0;border-radius:20px;font-family:-apple-system,sans-serif;font-size:11px;color:#6B6560}
+.tag-pill button{background:none;border:none;cursor:pointer;color:#A09688;font-size:15px;line-height:1;padding:0}
+.submit-btn{width:100%;padding:12px;margin-top:4px;background:#2C2520;color:#FAF7F2;border:none;border-radius:8px;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:15px;font-style:italic;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.15s}
+.submit-btn:hover{opacity:0.82}
+.submit-btn:disabled{opacity:0.4;cursor:not-allowed}
+.submit-btn i{font-size:17px;font-style:normal}
+.loading-row{display:flex;align-items:center;gap:5px;padding:1rem 0}
+.loading-text{font-family:'SF Mono',monospace;font-size:11px;color:#A09688;margin-left:6px}
+.dot{width:5px;height:5px;border-radius:50%;background:#C4B8AC;animation:pulse 1.2s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:0.2s}
+.dot:nth-child(3){animation-delay:0.4s}
+@keyframes pulse{0%,60%,100%{transform:scale(0.8);opacity:0.4}30%{transform:scale(1.2);opacity:1}}
+.success-banner{margin-top:1rem;background:#EAF3DE;border:1px solid #B8D99A;border-radius:10px;padding:14px 16px;font-size:14px;color:#3B6D11}
+.error-banner{margin-top:1rem;background:#FAEAE6;border:1px solid #E8A090;border-radius:10px;padding:14px 16px;font-size:14px;color:#C4654A}
+.entry-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:18px 20px;margin-bottom:10px;position:relative;overflow:hidden;transition:border-color 0.2s}
+.entry-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.entry-card[data-cat="win"]::before{background:#C4654A}
+.entry-card[data-cat="metric"]::before{background:#5B7B8A}
+.entry-card[data-cat="feedback"]::before{background:#8B6BAE}
+.entry-card[data-cat="decision"]::before{background:#6B8F71}
+.entry-card[data-cat="lesson"]::before{background:#C4A46C}
+.entry-card[data-cat="challenge"]::before{background:#A09688}
+.entry-card:hover{border-color:#C4654A}
+.entry-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
+.entry-title{font-size:14px;color:#2C2520;line-height:1.45;font-weight:500}
+.entry-snippet{font-size:13px;color:#8A8178;line-height:1.5}
+.entry-meta{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;margin-top:8px}
+.badge{font-family:'SF Mono',monospace;font-size:9px;font-weight:600;padding:3px 8px;border-radius:4px;flex-shrink:0;white-space:nowrap}
+.badge-win{background:#FAEAE6;color:#C4654A}
+.badge-metric{background:#E8F0F3;color:#5B7B8A}
+.badge-feedback{background:#F0EBF5;color:#8B6BAE}
+.badge-decision{background:#E8F2EA;color:#6B8F71}
+.badge-lesson{background:#F5F0E4;color:#C4A46C}
+.badge-challenge{background:#F0EEEB;color:#A09688}
+/* Charts */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.chart-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:20px}
+.chart-card.full{grid-column:1/-1}
+.chart-title{font-family:'SF Mono','Menlo',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;margin-bottom:4px}
+.chart-subtitle{font-size:13px;color:#2C2520;margin-bottom:16px;font-weight:400}
+.chart-wrap{position:relative;height:220px}
+.chart-wrap.tall{height:280px}
+.impact-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.impact-bar-label{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;width:20px;text-align:right;flex-shrink:0}
+.impact-bar-track{flex:1;height:10px;background:#EDE8E0;border-radius:10px;overflow:hidden}
+.impact-bar-fill{height:100%;background:#C4654A;border-radius:10px;transition:width 0.6s ease}
+.impact-bar-count{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;width:24px;flex-shrink:0}
+.top-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.top-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:#FAF7F2;border:1px solid #EDE8E0;border-radius:20px;font-family:-apple-system,sans-serif;font-size:11px;color:#6B6560}
+.top-tag-count{font-family:'SF Mono',monospace;font-size:10px;color:#C4654A}
+/* Insights */
+.insights-generate-btn{display:flex;align-items:center;gap:10px;padding:14px 20px;background:#2C2520;color:#FAF7F2;border:none;border-radius:10px;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:15px;font-style:italic;cursor:pointer;transition:opacity 0.15s;margin-bottom:24px}
+.insights-generate-btn:hover{opacity:0.82}
+.insights-generate-btn:disabled{opacity:0.4;cursor:not-allowed}
+.insights-generate-btn i{font-style:normal;font-size:18px}
+.insight-block{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:20px 22px;margin-bottom:14px}
+.insight-block-label{font-family:'SF Mono','Menlo',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;padding-bottom:8px;border-bottom:1px solid #EDE8E0;margin-bottom:12px}
+.insight-block-body{font-size:14px;color:#2C2520;line-height:1.7}
+.insight-block.accent{border-color:#C4654A}
+.insight-block.accent .insight-block-label{color:#C4654A;border-bottom-color:rgba(196,101,74,0.2)}
+.win-list{list-style:none;padding:0}
+.win-list li{font-size:14px;color:#2C2520;line-height:1.6;padding:5px 0;border-bottom:0.5px solid #EDE8E0;display:flex;gap:8px}
+.win-list li:last-child{border-bottom:none}
+.win-list li::before{content:'→';color:#C4654A;flex-shrink:0}
+.skill-pills{display:flex;flex-wrap:wrap;gap:6px}
+.skill-pill{display:inline-flex;padding:4px 14px;background:rgba(196,101,74,0.08);border:1px solid rgba(196,101,74,0.2);border-radius:20px;font-family:-apple-system,sans-serif;font-size:12px;color:#C4654A}
+.star-card{background:#FAF7F2;border:1px solid #EDE8E0;border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.star-card-title{font-size:13px;font-weight:500;color:#2C2520;margin-bottom:10px}
+.star-row{display:grid;grid-template-columns:70px 1fr;gap:6px;margin-bottom:6px;align-items:start}
+.star-row:last-child{margin-bottom:0}
+.star-key{font-family:'SF Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:#A09688;padding-top:2px}
+.star-val{font-size:13px;color:#2C2520;line-height:1.5}
+.linkedin-box{background:#FAF7F2;border:1px solid #EDE8E0;border-radius:10px;padding:16px;font-size:13px;color:#2C2520;line-height:1.7;white-space:pre-wrap;font-family:-apple-system,sans-serif}
+.copy-btn{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 14px;border:1px solid #DDD5C8;border-radius:6px;background:#fff;font-family:-apple-system,sans-serif;font-size:12px;color:#6B6560;cursor:pointer}
+.copy-btn:hover{border-color:#C4654A;color:#C4654A}
+.insights-meta{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;margin-bottom:20px}
+/* Mood */
+.mood-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:24px;margin-bottom:16px}
+.mood-section-label{font-family:'SF Mono','Menlo',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;margin-bottom:14px;display:block}
+.slider-group{margin-bottom:20px}
+.slider-row{display:flex;align-items:center;gap:14px;margin-bottom:4px}
+.slider-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.slider-label{font-size:14px;color:#2C2520;min-width:100px}
+.slider-track{flex:1}
+.slider-track input[type=range]{width:100%;height:4px;border-radius:4px;outline:none;border:none;background:linear-gradient(to right,#C4654A 0%,#C4654A var(--pct,60%),#EDE8E0 var(--pct,60%),#EDE8E0 100%);-webkit-appearance:none;cursor:pointer}
+.slider-track input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#C4654A;border:2px solid #fff;box-shadow:0 0 0 1px #C4654A;cursor:pointer}
+.slider-val{font-family:'SF Mono',monospace;font-size:13px;font-weight:600;color:#C4654A;width:18px;text-align:center;flex-shrink:0}
+.slider-desc{font-family:-apple-system,sans-serif;font-size:11px;color:#A09688;margin-left:46px}
+.emotion-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
+.emotion-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 6px;border:1px solid #EDE8E0;border-radius:10px;background:#fff;cursor:pointer;transition:all 0.15s}
+.emotion-btn:hover{border-color:#C4654A;background:#FAF7F2}
+.emotion-btn.selected{border-color:#C4654A;background:#FAEAE6}
+.emotion-emoji{font-size:22px;line-height:1}
+.emotion-label{font-size:10px;color:#8A8178;text-align:center;font-family:-apple-system,sans-serif}
+.emotion-btn.selected .emotion-label{color:#C4654A;font-weight:500}
+.mood-history-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;overflow:hidden;margin-bottom:10px}
+.mood-history-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #EDE8E0}
+.mood-history-week{font-family:'SF Mono',monospace;font-size:11px;color:#A09688}
+.mood-history-title{font-size:14px;color:#2C2520;font-weight:500;margin-top:3px}
+.mood-history-body{padding:12px 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mood-metric{text-align:center}
+.mood-metric-val{font-size:20px;font-weight:300;color:#C4654A;display:block}
+.mood-metric-label{font-family:-apple-system,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#A09688}
+.mood-dots{display:flex;gap:4px;justify-content:center;margin-top:4px}
+.mood-dot{width:8px;height:8px;border-radius:50%;background:#EDE8E0}
+.mood-dot.on{background:#C4654A}
+/* Emotion analytics */
+.emotion-freq-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.emotion-freq-emoji{font-size:18px;width:28px;text-align:center;flex-shrink:0}
+.emotion-freq-label{font-size:12px;color:#2C2520;min-width:90px;font-family:-apple-system,sans-serif}
+.emotion-freq-track{flex:1;height:8px;background:#EDE8E0;border-radius:8px;overflow:hidden}
+.emotion-freq-fill{height:100%;border-radius:8px;transition:width 0.6s ease}
+.emotion-freq-count{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;width:20px;text-align:right;flex-shrink:0}
+.toast{position:fixed;bottom:24px;right:24px;background:#2C2520;color:#FAF7F2;padding:10px 16px;border-radius:8px;font-family:'SF Mono',monospace;font-size:12px;opacity:0;pointer-events:none;transition:opacity 0.25s;z-index:100}
+.toast.show{opacity:1}
+.empty-state{text-align:center;padding:80px 20px;color:#A09688;font-size:14px}
+.empty-state i{font-size:36px;display:block;margin-bottom:10px;opacity:0.3}
+@media(max-width:768px){
+  #app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;flex-direction:row;align-items:center;padding:1rem 1.25rem;gap:1rem;overflow-x:auto}
+  .logo-sub{display:none}
+  .nav-links{flex-direction:row}
+  .main{padding:1.25rem 1rem 4rem}
+  .form-row,.star-row{grid-template-columns:1fr}
+  .stats-bar{flex-wrap:wrap}
+  .stat{min-width:50%}
+  .charts-grid{grid-template-columns:1fr}
+  .chart-card.full{grid-column:auto}
+  .emotion-grid{grid-template-columns:repeat(4,1fr)}
+}
+
+.score-hero{background:var(--color-background-primary);border:1px solid #EDE8E0;border-radius:12px;padding:28px 24px;margin-bottom:16px;text-align:center}
+.score-number{font-size:72px;font-weight:300;line-height:1;letter-spacing:-0.04em;margin-bottom:6px}
+.score-tier{font-size:14px;color:#8A8178;margin-bottom:20px}
+.score-gauge{max-width:400px;margin:0 auto 20px}
+.gauge-track{height:10px;background:#EDE8E0;border-radius:10px;overflow:hidden;margin-bottom:6px}
+.gauge-fill{height:100%;border-radius:10px;transition:width 1s ease}
+.gauge-labels{display:flex;justify-content:space-between;font-family:'SF Mono',monospace;font-size:10px;color:#A09688}
+.score-grade{font-size:28px;font-weight:300;margin-top:4px}
+.pillars-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.pillar-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:16px}
+.pillar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pillar-name{font-size:13px;font-weight:500;color:#2C2520}
+.pillar-pts{font-family:'SF Mono',monospace;font-size:12px;color:#C4654A}
+.pillar-bar-track{height:6px;background:#EDE8E0;border-radius:6px;overflow:hidden;margin-bottom:6px}
+.pillar-bar-fill{height:100%;border-radius:6px;background:#C4654A;transition:width 0.8s ease}
+.pillar-desc{font-size:11px;color:#A09688;font-family:-apple-system,sans-serif}
+.score-tips{background:#FAF7F2;border:1px solid #EDE8E0;border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.tip-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:0.5px solid #EDE8E0;font-size:13px;color:#2C2520}
+.tip-row:last-child{border-bottom:none}
+.tip-icon{flex-shrink:0;width:20px;color:#C4654A;font-size:15px}
+
+.ladder-search{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:24px;margin-bottom:20px}
+.ladder-search-row{display:flex;gap:10px;align-items:flex-end}
+.ladder-search-row input{flex:1}
+.ladder-search-btn{padding:9px 20px;background:#2C2520;color:#FAF7F2;border:none;border-radius:8px;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:14px;font-style:italic;cursor:pointer;white-space:nowrap;transition:opacity 0.15s;flex-shrink:0}
+.ladder-search-btn:hover{opacity:0.82}
+.ladder-search-btn:disabled{opacity:0.4;cursor:not-allowed}
+.ladder-examples{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.ladder-example{padding:4px 12px;border:1px solid #EDE8E0;border-radius:20px;font-family:-apple-system,sans-serif;font-size:11px;color:#8A8178;cursor:pointer;background:#FAF7F2;transition:all 0.15s}
+.ladder-example:hover{border-color:#C4654A;color:#C4654A;background:#fff}
+.ladder-meta{margin-bottom:20px}
+.ladder-profession{font-size:20px;font-weight:400;color:#2C2520}
+.ladder-profession em{font-style:italic;color:#C4654A}
+.ladder-industry-tag{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;text-transform:uppercase;letter-spacing:0.08em;margin-top:4px}
+.ladder-desc{font-size:13px;color:#8A8178;margin-top:8px;font-family:-apple-system,sans-serif;line-height:1.6}
+.tracks-wrap{display:grid;gap:20px}
+.tracks-two{grid-template-columns:1fr 1fr}
+.track-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;overflow:hidden}
+.track-head{padding:14px 18px;border-bottom:1px solid #EDE8E0;background:#FAF7F2}
+.track-name{font-size:13px;font-weight:500;color:#2C2520}
+.track-desc-text{font-size:11px;color:#A09688;font-family:-apple-system,sans-serif;margin-top:2px}
+.ladder-levels{padding:16px}
+.ladder-level{display:flex;gap:14px;position:relative}
+.ladder-level-line{position:absolute;left:15px;top:34px;bottom:0;width:1px;background:#EDE8E0}
+.ladder-level:last-child .ladder-level-line{display:none}
+.level-dot-col{flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding-top:4px}
+.lvl-dot{width:30px;height:30px;border-radius:50%;border:2px solid #EDE8E0;background:#fff;display:flex;align-items:center;justify-content:center;font-family:'SF Mono',monospace;font-size:10px;color:#A09688;z-index:1;position:relative;flex-shrink:0}
+.lvl-dot.is-current{border-color:#C4654A;background:#C4654A;color:#fff;width:36px;height:36px;font-size:11px;font-weight:600;box-shadow:0 0 0 4px rgba(196,101,74,0.15)}
+.lvl-dot.is-above{border-color:#EDE8E0;background:#FAF7F2;color:#C4B8AC}
+.level-body-col{flex:1;padding-bottom:20px}
+.lvl-title{font-size:14px;font-weight:500;color:#2C2520;margin-bottom:2px}
+.lvl-title.is-current{color:#C4654A;font-size:15px}
+.lvl-title.is-above{color:#C4B8AC}
+.lvl-years{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;margin-bottom:6px}
+.lvl-desc{font-size:12px;color:#8A8178;font-family:-apple-system,sans-serif;line-height:1.5;margin-bottom:6px}
+.lvl-skills{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.lvl-skill{font-size:10px;padding:2px 8px;border-radius:20px;font-family:-apple-system,sans-serif}
+.lvl-skill.sk-current{background:rgba(196,101,74,0.1);color:#C4654A;border:1px solid rgba(196,101,74,0.2)}
+.lvl-skill.sk-other{background:#FAF7F2;color:#8A8178;border:1px solid #EDE8E0}
+.lvl-promo{font-size:11px;color:#6B8F71;font-family:-apple-system,sans-serif;font-style:italic}
+.lvl-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#C4654A;color:#fff;border-radius:4px;font-size:9px;font-family:'SF Mono',monospace;font-weight:600;letter-spacing:0.06em;margin-bottom:6px}
+.ladder-insights-box{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:20px;margin-top:16px}
+.ladder-insight-row{display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid #EDE8E0;font-size:13px;color:#2C2520;font-family:-apple-system,sans-serif;line-height:1.5}
+.ladder-insight-row:last-child{border-bottom:none}
+.ladder-insight-row i{color:#C4654A;flex-shrink:0;font-size:15px;margin-top:1px}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <nav class="sidebar">
+    <div>
+      <div class="logo"><h1>Career<em>Log</em></h1></div>
+      <div class="logo-sub">your track record</div>
+    </div>
+    <ul class="nav-links">
+      <li><button class="nav-btn active" data-tab="write"><i class="ti ti-edit"></i> Write</button></li>
+      <li><button class="nav-btn" data-tab="entries"><i class="ti ti-list"></i> Entries</button></li>
+      <li><button class="nav-btn" data-tab="insights"><i class="ti ti-sparkles"></i> Insights</button></li>
+      <li><button class="nav-btn" data-tab="score"><i class="ti ti-award"></i> Score</button></li>
+      <li><button class="nav-btn" data-tab="ladder"><i class="ti ti-stairs"></i> Ladder</button></li>
+      <li><button class="nav-btn" data-tab="analytics"><i class="ti ti-chart-bar"></i> Analytics</button></li>
+      <li><button class="nav-btn" data-tab="mood"><i class="ti ti-mood-smile"></i> Mood</button></li>
+    </ul>
+  </nav>
+
+  <main class="main">
+
+    <!-- WRITE -->
+    <section id="write" class="tab-section active">
+      <div class="page-header">
+        <h1>New <em>Entry</em></h1>
+        <p class="sans">What happened today worth remembering?</p>
+      </div>
+      <div class="form-card">
+        <div class="form-group">
+          <label>Category</label>
+          <div class="category-grid">
+            <button class="cat-btn selected" data-cat="win"><i class="ti ti-trophy"></i> Win</button>
+            <button class="cat-btn" data-cat="metric"><i class="ti ti-chart-bar"></i> Metric</button>
+            <button class="cat-btn" data-cat="feedback"><i class="ti ti-message"></i> Feedback</button>
+            <button class="cat-btn" data-cat="decision"><i class="ti ti-sitemap"></i> Decision</button>
+            <button class="cat-btn" data-cat="lesson"><i class="ti ti-bulb"></i> Lesson</button>
+            <button class="cat-btn" data-cat="challenge"><i class="ti ti-flame"></i> Challenge</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="entry-title">Title</label>
+          <input type="text" id="entry-title" placeholder="e.g. Shipped the new checkout flow 2 weeks early">
+        </div>
+        <div class="form-group">
+          <label for="entry-content">What happened? <span class="muted">— be specific, include numbers</span></label>
+          <textarea id="entry-content" placeholder="Describe the situation, what you did, and the result. The more detail, the better your insights later."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Impact level</label>
+            <div class="impact-row">
+              <button class="impact-dot" data-val="1">1</button>
+              <button class="impact-dot" data-val="2">2</button>
+              <button class="impact-dot selected" data-val="3">3</button>
+              <button class="impact-dot" data-val="4">4</button>
+              <button class="impact-dot" data-val="5">5</button>
+            </div>
+            <p class="impact-label" id="impact-label">Medium impact</p>
+          </div>
+          <div class="form-group">
+            <label for="entry-date">Date</label>
+            <input type="date" id="entry-date">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Tags <span class="muted">— press Enter to add</span></label>
+          <div class="tags-input" id="tags-container">
+            <input type="text" id="tag-input" placeholder="leadership, product, backend…">
+          </div>
+        </div>
+        <button class="submit-btn" id="submit-btn">
+          <i class="ti ti-device-floppy"></i> Save entry
+        </button>
+        <div class="loading-row" id="write-loading" style="display:none">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="loading-text">Saving entry…</span>
+        </div>
+        <div id="write-result"></div>
+      </div>
+    </section>
+
+    <!-- ENTRIES -->
+    <section id="entries" class="tab-section">
+      <div class="page-header">
+        <h1>All <em>Entries</em></h1>
+        <p class="sans">Your career record, one entry at a time.</p>
+      </div>
+      <div class="loading-row" id="entries-loading" style="display:none">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="loading-text">Loading entries…</span>
+      </div>
+      <div class="stats-bar" id="entries-stats" style="display:none"></div>
+      <div id="entries-list"></div>
+    </section>
+
+    <!-- INSIGHTS -->
+    <section id="insights" class="tab-section">
+      <div class="page-header">
+        <h1>Career <em>Insights</em></h1>
+        <p class="sans">Claude analyses your entries and builds your professional case.</p>
+      </div>
+      <button class="insights-generate-btn" id="insights-generate-btn" onclick="generateInsights()">
+        <i class="ti ti-sparkles"></i> Generate insights from my entries
+      </button>
+      <div class="loading-row" id="insights-loading" style="display:none">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="loading-text">Claude is reading your entries and building your career case…</span>
+      </div>
+      <div id="insights-content"></div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section id="analytics" class="tab-section">
+      <div class="page-header">
+        <h1>Career <em>Analytics</em></h1>
+        <p class="sans">Descriptive patterns across all your entries and mood data.</p>
+      </div>
+      <div class="loading-row" id="analytics-loading" style="display:none">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="loading-text">Building analytics…</span>
+      </div>
+      <div id="analytics-content"></div>
+    </section>
+
+    <!-- MOOD -->
+    <section id="mood" class="tab-section">
+      <div class="page-header">
+        <h1>Weekly <em>Mood</em></h1>
+        <p class="sans">Track your energy, satisfaction and stress each week.</p>
+      </div>
+      <div class="mood-card">
+        <span class="mood-section-label">Week of</span>
+        <div class="form-group" style="margin-bottom:20px">
+          <input type="date" id="mood-week" style="max-width:200px">
+        </div>
+        <span class="mood-section-label">How are you feeling this week?</span>
+        <div class="slider-group">
+          <div class="slider-row">
+            <div class="slider-icon" style="background:#FAEEDA"><i class="ti ti-bolt" style="color:#854F0B"></i></div>
+            <div class="slider-label">Energy</div>
+            <div class="slider-track"><input type="range" id="slider-energy" min="1" max="5" value="3" step="1"></div>
+            <div class="slider-val" id="val-energy">3</div>
+          </div>
+          <div class="slider-desc" id="desc-energy">Steady — getting through the week</div>
+        </div>
+        <div class="slider-group">
+          <div class="slider-row">
+            <div class="slider-icon" style="background:#EAF3DE"><i class="ti ti-mood-smile" style="color:#3B6D11"></i></div>
+            <div class="slider-label">Satisfaction</div>
+            <div class="slider-track"><input type="range" id="slider-satisfaction" min="1" max="5" value="3" step="1"></div>
+            <div class="slider-val" id="val-satisfaction">3</div>
+          </div>
+          <div class="slider-desc" id="desc-satisfaction">Neutral — neither thriving nor struggling</div>
+        </div>
+        <div class="slider-group">
+          <div class="slider-row">
+            <div class="slider-icon" style="background:#FBEAF0"><i class="ti ti-flame" style="color:#72243E"></i></div>
+            <div class="slider-label">Stress</div>
+            <div class="slider-track"><input type="range" id="slider-stress" min="1" max="5" value="3" step="1"></div>
+            <div class="slider-val" id="val-stress">3</div>
+          </div>
+          <div class="slider-desc" id="desc-stress">Manageable — normal background pressure</div>
+        </div>
+        <span class="mood-section-label" style="margin-top:4px">Primary emotion</span>
+        <div class="emotion-grid">
+          <button class="emotion-btn" data-emotion="motivated" onclick="selectEmotion(this)"><span class="emotion-emoji">🔥</span><span class="emotion-label">Motivated</span></button>
+          <button class="emotion-btn" data-emotion="confident" onclick="selectEmotion(this)"><span class="emotion-emoji">💪</span><span class="emotion-label">Confident</span></button>
+          <button class="emotion-btn" data-emotion="proud" onclick="selectEmotion(this)"><span class="emotion-emoji">⭐</span><span class="emotion-label">Proud</span></button>
+          <button class="emotion-btn" data-emotion="grateful" onclick="selectEmotion(this)"><span class="emotion-emoji">🙏</span><span class="emotion-label">Grateful</span></button>
+          <button class="emotion-btn" data-emotion="calm" onclick="selectEmotion(this)"><span class="emotion-emoji">😌</span><span class="emotion-label">Calm</span></button>
+          <button class="emotion-btn" data-emotion="curious" onclick="selectEmotion(this)"><span class="emotion-emoji">🔍</span><span class="emotion-label">Curious</span></button>
+          <button class="emotion-btn" data-emotion="focused" onclick="selectEmotion(this)"><span class="emotion-emoji">🎯</span><span class="emotion-label">Focused</span></button>
+          <button class="emotion-btn" data-emotion="creative" onclick="selectEmotion(this)"><span class="emotion-emoji">💡</span><span class="emotion-label">Creative</span></button>
+          <button class="emotion-btn" data-emotion="anxious" onclick="selectEmotion(this)"><span class="emotion-emoji">😰</span><span class="emotion-label">Anxious</span></button>
+          <button class="emotion-btn" data-emotion="overwhelmed" onclick="selectEmotion(this)"><span class="emotion-emoji">😵</span><span class="emotion-label">Overwhelmed</span></button>
+          <button class="emotion-btn" data-emotion="frustrated" onclick="selectEmotion(this)"><span class="emotion-emoji">😤</span><span class="emotion-label">Frustrated</span></button>
+          <button class="emotion-btn" data-emotion="bored" onclick="selectEmotion(this)"><span class="emotion-emoji">😑</span><span class="emotion-label">Bored</span></button>
+          <button class="emotion-btn" data-emotion="burnt-out" onclick="selectEmotion(this)"><span class="emotion-emoji">🪫</span><span class="emotion-label">Burnt out</span></button>
+          <button class="emotion-btn" data-emotion="uncertain" onclick="selectEmotion(this)"><span class="emotion-emoji">🤔</span><span class="emotion-label">Uncertain</span></button>
+          <button class="emotion-btn" data-emotion="disconnected" onclick="selectEmotion(this)"><span class="emotion-emoji">🔌</span><span class="emotion-label">Disconnected</span></button>
+          <button class="emotion-btn" data-emotion="undervalued" onclick="selectEmotion(this)"><span class="emotion-emoji">👻</span><span class="emotion-label">Undervalued</span></button>
+        </div>
+        <span class="mood-section-label" style="margin-top:20px">Highlights & lowlights</span>
+        <div class="form-row" style="margin-bottom:16px">
+          <div class="form-group" style="margin-bottom:0">
+            <label for="mood-highlight">Best thing this week</label>
+            <textarea id="mood-highlight" style="min-height:80px" placeholder="What went well?"></textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label for="mood-lowlight">Hardest thing this week</label>
+            <textarea id="mood-lowlight" style="min-height:80px" placeholder="What drained you?"></textarea>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="mood-notes">Any other notes</label>
+          <textarea id="mood-notes" style="min-height:70px" placeholder="Anything else worth capturing…"></textarea>
+        </div>
+        <button class="submit-btn" id="mood-submit-btn">
+          <i class="ti ti-device-floppy"></i> Save this week
+        </button>
+        <div class="loading-row" id="mood-loading" style="display:none">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="loading-text">Saving mood entry…</span>
+        </div>
+        <div id="mood-result"></div>
+      </div>
+      <div style="margin-top:24px">
+        <div class="page-header" style="margin-bottom:12px"><h1 style="font-size:18px">Past <em>weeks</em></h1></div>
+        <div class="loading-row" id="mood-history-loading" style="display:none">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="loading-text">Loading history…</span>
+        </div>
+        <div id="mood-history-list"></div>
+      </div>
+    </section>
+
+  
+    <!-- SCORE -->
+    <section id="score" class="tab-section">
+      <div class="page-header">
+        <h1>Career <em>Score</em></h1>
+        <p class="sans">Your track record, quantified.</p>
+      </div>
+      <div class="loading-row" id="score-loading" style="display:none">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="loading-text">Calculating your career score…</span>
+      </div>
+      <div id="score-content"></div>
+    </section>
+
+
+    <!-- LADDER -->
+    <section id="ladder" class="tab-section">
+      <div class="page-header">
+        <h1>Career <em>Ladder</em></h1>
+        <p class="sans">Enter your current role — see your full path up and down the ladder.</p>
+      </div>
+      <div class="ladder-search">
+        <label for="ladder-input">Your current job title</label>
+        <div class="ladder-search-row">
+          <input type="text" id="ladder-input" placeholder="e.g. Senior Product Manager, Staff Engineer, Associate Nurse…">
+          <button class="ladder-search-btn" id="ladder-btn">
+            <i class="ti ti-stairs" style="font-style:normal"></i> Build my ladder
+          </button>
+        </div>
+        <div class="ladder-examples">
+          <span class="ladder-example">Junior Software Engineer</span>
+          <span class="ladder-example">Senior Product Manager</span>
+          <span class="ladder-example">Marketing Manager</span>
+          <span class="ladder-example">Associate Consultant</span>
+          <span class="ladder-example">Staff Nurse</span>
+          <span class="ladder-example">Financial Analyst</span>
+          <span class="ladder-example">UX Designer</span>
+          <span class="ladder-example">Sales Account Executive</span>
+          <span class="ladder-example">Data Scientist</span>
+          <span class="ladder-example">Associate Attorney</span>
+        </div>
+      </div>
+      <div class="loading-row" id="ladder-loading" style="display:none">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="loading-text">Mapping your career ladder…</span>
+      </div>
+      <div id="ladder-content"></div>
+    </section>
+
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
 const SUPABASE_URL      = 'https://vfrfgfqwflpwsiadifcp.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmcmZnZnF3Zmxwd3NpYWRpZmNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDYwNjAsImV4cCI6MjA5NjMyMjA2MH0.mTcEnYUe4N_YYZMhML6cKrKmUkoIZ_zfHAhX4K9KcAo';
 const USER_ID = 'demo_user';
@@ -325,7 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tab === 'entries')   loadEntries();
       if (tab === 'analytics') loadAnalytics();
       if (tab === 'score') loadScore();
-      if (tab === 'ladder') initLadder();
+      if (tab === 'ladder') { /* ladder ready */ }
       if (tab === 'mood')      { initMoodSliders(); loadMoodHistory(); }
     });
   });
@@ -465,7 +803,7 @@ function renderInsights(d, entryCount) {
     </div>`).join('');
 
   el.innerHTML = `
-    <p class="insights-meta">${entryCount} entries analysed · Last calculated ${calculatedAt ? new Date(calculatedAt).toLocaleDateString('en',{month:'long',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}) : 'just now'}${data.entryBonus ? ' · +' + data.entryBonus + ' entry bonus pts' : ''}</p>
+    <p class="insights-meta">${entryCount} entries analysed · Generated ${new Date().toLocaleDateString('en',{month:'long',day:'numeric',year:'numeric'})}</p>
 
     <div class="insight-block accent">
       <div class="insight-block-label">Career summary</div>
@@ -605,9 +943,99 @@ async function loadMoodHistory() {
 }
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-</script>
-</body>
-</html>
 
+
+// ── Career Ladder ─────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('ladder-btn').addEventListener('click', buildLadder);
+  document.getElementById('ladder-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') buildLadder();
+  });
+  document.querySelectorAll('.ladder-example').forEach(function(el) {
+    el.addEventListener('click', function() {
+      document.getElementById('ladder-input').value = el.textContent;
+      buildLadder();
+    });
+  });
+});
+
+async function buildLadder() {
+  var jobTitle = document.getElementById('ladder-input').value.trim();
+  if (!jobTitle) { showToast('Please enter your job title'); return; }
+  var btn = document.getElementById('ladder-btn');
+  var el  = document.getElementById('ladder-content');
+  btn.disabled = true;
+  el.innerHTML = '';
+  document.getElementById('ladder-loading').style.display = 'flex';
+  try {
+    var res = await fetch('/api/career-ladder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobTitle: jobTitle })
+    });
+    if (!res.ok) {
+      var err = await res.json();
+      throw new Error(err.error || 'Server error ' + res.status);
+    }
+    var data = await res.json();
+    document.getElementById('ladder-loading').style.display = 'none';
+    renderLadder(data);
+  } catch(err) {
+    document.getElementById('ladder-loading').style.display = 'none';
+    el.innerHTML = '<div class="error-banner">Error: ' + err.message + '</div>';
+  }
+  btn.disabled = false;
+}
+
+function renderLadder(data) {
+  var el = document.getElementById('ladder-content');
+  var twoTracks = data.tracks && data.tracks.length > 1;
+
+  var tracksHtml = (data.tracks || []).map(function(track) {
+    var reversed = track.levels.slice().reverse();
+    var currentIdx = reversed.findIndex(function(l) { return l.is_current; });
+
+    var levelsHtml = reversed.map(function(level, idx) {
+      var isCurrent = level.is_current;
+      var isAbove   = currentIdx >= 0 && idx < currentIdx;
+      var dotClass  = isCurrent ? 'is-current' : isAbove ? 'is-above' : '';
+      var skillsHtml = (level.key_skills || []).map(function(s) {
+        return '<span class="lvl-skill ' + (isCurrent ? 'sk-current' : 'sk-other') + '">' + s + '</span>';
+      }).join('');
+
+      return '<div class="ladder-level">' +
+        '<div class="level-dot-col"><div class="lvl-dot ' + dotClass + '">' + level.rank + '</div>' +
+        '<div class="ladder-level-line"></div></div>' +
+        '<div class="level-body-col">' +
+        (isCurrent ? '<div class="lvl-badge">&#x1F4CD; YOU ARE HERE</div>' : '') +
+        '<div class="lvl-title ' + (isCurrent ? 'is-current' : isAbove ? 'is-above' : '') + '">' + level.title + '</div>' +
+        '<div class="lvl-years">' + level.years_typical + ' years typical</div>' +
+        '<div class="lvl-desc">' + level.description + '</div>' +
+        '<div class="lvl-skills">' + skillsHtml + '</div>' +
+        (!isCurrent && !isAbove && level.promotion_criteria ? '<div class="lvl-promo">&rarr; ' + level.promotion_criteria + '</div>' : '') +
+        '</div></div>';
+    }).join('');
+
+    return '<div class="track-card">' +
+      '<div class="track-head"><div class="track-name">' + track.name + '</div>' +
+      '<div class="track-desc-text">' + track.description + '</div></div>' +
+      '<div class="ladder-levels">' + levelsHtml + '</div></div>';
+  }).join('');
+
+  var iconList = ['ti-bulb','ti-alert-triangle','ti-rocket'];
+  var insightsHtml = (data.insights || []).map(function(tip, i) {
+    return '<div class="ladder-insight-row"><i class="ti ' + (iconList[i] || 'ti-star') + '"></i>' + tip + '</div>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="ladder-meta">' +
+    '<div class="ladder-profession">' + data.profession + ' <em>ladder</em></div>' +
+    '<div class="ladder-industry-tag">' + data.industry + '</div>' +
+    '<div class="ladder-desc">' + data.description + '</div></div>' +
+    '<div class="tracks-wrap ' + (twoTracks ? 'tracks-two' : '') + '">' + tracksHtml + '</div>' +
+    (insightsHtml ? '<div class="ladder-insights-box"><div class="chart-title" style="margin-bottom:10px">Insights for your stage</div>' + insightsHtml + '</div>' : '');
+}
+
+</script>
 </body>
 </html>
