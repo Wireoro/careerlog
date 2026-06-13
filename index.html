@@ -13,10 +13,16 @@ async function loadScore() {
   document.getElementById('score-loading').style.display = 'flex';
 
   try {
-    const [entries, moodRows] = await Promise.all([
-      sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.asc&limit=500'),
-      sbFetch('weekly_mood?user_id=eq.' + USER_ID + '&order=week_of.asc&limit=200'),
-    ]);
+    // Step 1: fetch entries
+    let entries = [], moodRows = [];
+    try {
+      entries  = await sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.asc&limit=500');
+      moodRows = await sbFetch('weekly_mood?user_id=eq.'     + USER_ID + '&order=week_of.asc&limit=200');
+    } catch(fetchErr) {
+      document.getElementById('score-loading').style.display = 'none';
+      el.innerHTML = '<div class="error-banner">Could not load entries from database: ' + fetchErr.message + '</div>';
+      return;
+    }
 
     if (!entries || entries.length === 0) {
       document.getElementById('score-loading').style.display = 'none';
@@ -24,20 +30,40 @@ async function loadScore() {
       return;
     }
 
-    const res = await fetch('/api/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entries, moodRows }),
-    });
-    if (!res.ok) throw new Error('Score API error: ' + res.status);
-    const data = await res.json();
+    // Step 2: call scoring API
+    let res;
+    try {
+      res = await fetch('/api/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entries, moodRows }),
+      });
+    } catch(apiErr) {
+      document.getElementById('score-loading').style.display = 'none';
+      el.innerHTML = '<div class="error-banner">Could not reach scoring server: ' + apiErr.message + '</div>';
+      return;
+    }
 
+    if (!res.ok) {
+      const errText = await res.text();
+      document.getElementById('score-loading').style.display = 'none';
+      el.innerHTML = '<div class="error-banner">Scoring server error (' + res.status + '): ' + errText + '</div>';
+      return;
+    }
+
+    const data = await res.json();
     document.getElementById('score-loading').style.display = 'none';
+
+    if (!data || !data.score) {
+      el.innerHTML = '<div class="error-banner">Scoring returned no data. Check server logs on Render.</div>';
+      return;
+    }
+
     renderScore(data, entries.length);
 
   } catch(err) {
     document.getElementById('score-loading').style.display = 'none';
-    el.innerHTML = '<div class="error-banner">Error: ' + err.message + '</div>';
+    el.innerHTML = '<div class="error-banner">Unexpected error: ' + err.message + '</div>';
     console.error(err);
   }
 }
