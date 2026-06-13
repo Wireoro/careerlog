@@ -93,6 +93,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .badge-decision{background:#E8F2EA;color:#6B8F71}
 .badge-lesson{background:#F5F0E4;color:#C4A46C}
 .badge-challenge{background:#F0EEEB;color:#A09688}
+/* Charts */
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
 .chart-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:20px}
 .chart-card.full{grid-column:1/-1}
@@ -108,32 +109,50 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .top-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .top-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:#FAF7F2;border:1px solid #EDE8E0;border-radius:20px;font-family:-apple-system,sans-serif;font-size:11px;color:#6B6560}
 .top-tag-count{font-family:'SF Mono',monospace;font-size:10px;color:#C4654A}
-.emotion-freq-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.emotion-freq-emoji{font-size:18px;width:28px;text-align:center;flex-shrink:0}
-.emotion-freq-label{font-size:12px;color:#2C2520;min-width:90px;font-family:-apple-system,sans-serif}
-.emotion-freq-track{flex:1;height:8px;background:#EDE8E0;border-radius:8px;overflow:hidden}
-.emotion-freq-fill{height:100%;border-radius:8px;transition:width 0.6s ease}
-.emotion-freq-fill.pos{background:#6B8F71}
-.emotion-freq-fill.neg{background:#C4654A}
-.emotion-freq-fill.neu{background:#C4A46C}
-.emotion-freq-count{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;width:20px;text-align:right;flex-shrink:0}
+/* Insights */
+.insights-generate-btn{display:flex;align-items:center;gap:10px;padding:14px 20px;background:#2C2520;color:#FAF7F2;border:none;border-radius:10px;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:15px;font-style:italic;cursor:pointer;transition:opacity 0.15s;margin-bottom:24px}
+.insights-generate-btn:hover{opacity:0.82}
+.insights-generate-btn:disabled{opacity:0.4;cursor:not-allowed}
+.insights-generate-btn i{font-style:normal;font-size:18px}
+.insight-block{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:20px 22px;margin-bottom:14px}
+.insight-block-label{font-family:'SF Mono','Menlo',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;padding-bottom:8px;border-bottom:1px solid #EDE8E0;margin-bottom:12px}
+.insight-block-body{font-size:14px;color:#2C2520;line-height:1.7}
+.insight-block.accent{border-color:#C4654A}
+.insight-block.accent .insight-block-label{color:#C4654A;border-bottom-color:rgba(196,101,74,0.2)}
+.win-list{list-style:none;padding:0}
+.win-list li{font-size:14px;color:#2C2520;line-height:1.6;padding:5px 0;border-bottom:0.5px solid #EDE8E0;display:flex;gap:8px}
+.win-list li:last-child{border-bottom:none}
+.win-list li::before{content:'→';color:#C4654A;flex-shrink:0}
+.skill-pills{display:flex;flex-wrap:wrap;gap:6px}
+.skill-pill{display:inline-flex;padding:4px 14px;background:rgba(196,101,74,0.08);border:1px solid rgba(196,101,74,0.2);border-radius:20px;font-family:-apple-system,sans-serif;font-size:12px;color:#C4654A}
+.star-card{background:#FAF7F2;border:1px solid #EDE8E0;border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.star-card-title{font-size:13px;font-weight:500;color:#2C2520;margin-bottom:10px}
+.star-row{display:grid;grid-template-columns:70px 1fr;gap:6px;margin-bottom:6px;align-items:start}
+.star-row:last-child{margin-bottom:0}
+.star-key{font-family:'SF Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:#A09688;padding-top:2px}
+.star-val{font-size:13px;color:#2C2520;line-height:1.5}
+.linkedin-box{background:#FAF7F2;border:1px solid #EDE8E0;border-radius:10px;padding:16px;font-size:13px;color:#2C2520;line-height:1.7;white-space:pre-wrap;font-family:-apple-system,sans-serif}
+.copy-btn{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 14px;border:1px solid #DDD5C8;border-radius:6px;background:#fff;font-family:-apple-system,sans-serif;font-size:12px;color:#6B6560;cursor:pointer}
+.copy-btn:hover{border-color:#C4654A;color:#C4654A}
+.insights-meta{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;margin-bottom:20px}
+/* Mood */
 .mood-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:24px;margin-bottom:16px}
 .mood-section-label{font-family:'SF Mono','Menlo',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;margin-bottom:14px;display:block}
 .slider-group{margin-bottom:20px}
 .slider-row{display:flex;align-items:center;gap:14px;margin-bottom:4px}
 .slider-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
 .slider-label{font-size:14px;color:#2C2520;min-width:100px}
-.slider-track{flex:1;position:relative}
+.slider-track{flex:1}
 .slider-track input[type=range]{width:100%;height:4px;border-radius:4px;outline:none;border:none;background:linear-gradient(to right,#C4654A 0%,#C4654A var(--pct,60%),#EDE8E0 var(--pct,60%),#EDE8E0 100%);-webkit-appearance:none;cursor:pointer}
 .slider-track input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#C4654A;border:2px solid #fff;box-shadow:0 0 0 1px #C4654A;cursor:pointer}
 .slider-val{font-family:'SF Mono',monospace;font-size:13px;font-weight:600;color:#C4654A;width:18px;text-align:center;flex-shrink:0}
 .slider-desc{font-family:-apple-system,sans-serif;font-size:11px;color:#A09688;margin-left:46px}
 .emotion-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
-.emotion-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 6px;border:1px solid #EDE8E0;border-radius:10px;background:#fff;cursor:pointer;transition:all 0.15s;font-family:-apple-system,sans-serif}
+.emotion-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 6px;border:1px solid #EDE8E0;border-radius:10px;background:#fff;cursor:pointer;transition:all 0.15s}
 .emotion-btn:hover{border-color:#C4654A;background:#FAF7F2}
 .emotion-btn.selected{border-color:#C4654A;background:#FAEAE6}
 .emotion-emoji{font-size:22px;line-height:1}
-.emotion-label{font-size:10px;color:#8A8178;text-align:center}
+.emotion-label{font-size:10px;color:#8A8178;text-align:center;font-family:-apple-system,sans-serif}
 .emotion-btn.selected .emotion-label{color:#C4654A;font-weight:500}
 .mood-history-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;overflow:hidden;margin-bottom:10px}
 .mood-history-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #EDE8E0}
@@ -146,6 +165,13 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .mood-dots{display:flex;gap:4px;justify-content:center;margin-top:4px}
 .mood-dot{width:8px;height:8px;border-radius:50%;background:#EDE8E0}
 .mood-dot.on{background:#C4654A}
+/* Emotion analytics */
+.emotion-freq-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.emotion-freq-emoji{font-size:18px;width:28px;text-align:center;flex-shrink:0}
+.emotion-freq-label{font-size:12px;color:#2C2520;min-width:90px;font-family:-apple-system,sans-serif}
+.emotion-freq-track{flex:1;height:8px;background:#EDE8E0;border-radius:8px;overflow:hidden}
+.emotion-freq-fill{height:100%;border-radius:8px;transition:width 0.6s ease}
+.emotion-freq-count{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;width:20px;text-align:right;flex-shrink:0}
 .toast{position:fixed;bottom:24px;right:24px;background:#2C2520;color:#FAF7F2;padding:10px 16px;border-radius:8px;font-family:'SF Mono',monospace;font-size:12px;opacity:0;pointer-events:none;transition:opacity 0.25s;z-index:100}
 .toast.show{opacity:1}
 .empty-state{text-align:center;padding:80px 20px;color:#A09688;font-size:14px}
@@ -156,7 +182,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
   .logo-sub{display:none}
   .nav-links{flex-direction:row}
   .main{padding:1.25rem 1rem 4rem}
-  .form-row{grid-template-columns:1fr}
+  .form-row,.star-row{grid-template-columns:1fr}
   .stats-bar{flex-wrap:wrap}
   .stat{min-width:50%}
   .charts-grid{grid-template-columns:1fr}
@@ -175,6 +201,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
     <ul class="nav-links">
       <li><button class="nav-btn active" data-tab="write"><i class="ti ti-edit"></i> Write</button></li>
       <li><button class="nav-btn" data-tab="entries"><i class="ti ti-list"></i> Entries</button></li>
+      <li><button class="nav-btn" data-tab="insights"><i class="ti ti-sparkles"></i> Insights</button></li>
       <li><button class="nav-btn" data-tab="analytics"><i class="ti ti-chart-bar"></i> Analytics</button></li>
       <li><button class="nav-btn" data-tab="mood"><i class="ti ti-mood-smile"></i> Mood</button></li>
     </ul>
@@ -256,6 +283,22 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
       <div id="entries-list"></div>
     </section>
 
+    <!-- INSIGHTS -->
+    <section id="insights" class="tab-section">
+      <div class="page-header">
+        <h1>Career <em>Insights</em></h1>
+        <p class="sans">Claude analyses your entries and builds your professional case.</p>
+      </div>
+      <button class="insights-generate-btn" id="insights-generate-btn" onclick="generateInsights()">
+        <i class="ti ti-sparkles"></i> Generate insights from my entries
+      </button>
+      <div class="loading-row" id="insights-loading" style="display:none">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="loading-text">Claude is reading your entries and building your career case…</span>
+      </div>
+      <div id="insights-content"></div>
+    </section>
+
     <!-- ANALYTICS -->
     <section id="analytics" class="tab-section">
       <div class="page-header">
@@ -283,7 +326,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
         <span class="mood-section-label">How are you feeling this week?</span>
         <div class="slider-group">
           <div class="slider-row">
-            <div class="slider-icon" style="background:#FAEEDA"><i class="ti ti-bolt" style="color:#854F0B" aria-hidden="true"></i></div>
+            <div class="slider-icon" style="background:#FAEEDA"><i class="ti ti-bolt" style="color:#854F0B"></i></div>
             <div class="slider-label">Energy</div>
             <div class="slider-track"><input type="range" id="slider-energy" min="1" max="5" value="3" step="1"></div>
             <div class="slider-val" id="val-energy">3</div>
@@ -292,7 +335,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
         </div>
         <div class="slider-group">
           <div class="slider-row">
-            <div class="slider-icon" style="background:#EAF3DE"><i class="ti ti-mood-smile" style="color:#3B6D11" aria-hidden="true"></i></div>
+            <div class="slider-icon" style="background:#EAF3DE"><i class="ti ti-mood-smile" style="color:#3B6D11"></i></div>
             <div class="slider-label">Satisfaction</div>
             <div class="slider-track"><input type="range" id="slider-satisfaction" min="1" max="5" value="3" step="1"></div>
             <div class="slider-val" id="val-satisfaction">3</div>
@@ -301,7 +344,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
         </div>
         <div class="slider-group">
           <div class="slider-row">
-            <div class="slider-icon" style="background:#FBEAF0"><i class="ti ti-flame" style="color:#72243E" aria-hidden="true"></i></div>
+            <div class="slider-icon" style="background:#FBEAF0"><i class="ti ti-flame" style="color:#72243E"></i></div>
             <div class="slider-label">Stress</div>
             <div class="slider-track"><input type="range" id="slider-stress" min="1" max="5" value="3" step="1"></div>
             <div class="slider-val" id="val-stress">3</div>
@@ -309,23 +352,23 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
           <div class="slider-desc" id="desc-stress">Manageable — normal background pressure</div>
         </div>
         <span class="mood-section-label" style="margin-top:4px">Primary emotion</span>
-        <div class="emotion-grid" id="emotion-grid">
-          <button class="emotion-btn" data-emotion="motivated" data-valence="pos" onclick="selectEmotion(this)"><span class="emotion-emoji">🔥</span><span class="emotion-label">Motivated</span></button>
-          <button class="emotion-btn" data-emotion="confident" data-valence="pos" onclick="selectEmotion(this)"><span class="emotion-emoji">💪</span><span class="emotion-label">Confident</span></button>
-          <button class="emotion-btn" data-emotion="proud" data-valence="pos" onclick="selectEmotion(this)"><span class="emotion-emoji">⭐</span><span class="emotion-label">Proud</span></button>
-          <button class="emotion-btn" data-emotion="grateful" data-valence="pos" onclick="selectEmotion(this)"><span class="emotion-emoji">🙏</span><span class="emotion-label">Grateful</span></button>
-          <button class="emotion-btn" data-emotion="calm" data-valence="pos" onclick="selectEmotion(this)"><span class="emotion-emoji">😌</span><span class="emotion-label">Calm</span></button>
-          <button class="emotion-btn" data-emotion="curious" data-valence="pos" onclick="selectEmotion(this)"><span class="emotion-emoji">🔍</span><span class="emotion-label">Curious</span></button>
-          <button class="emotion-btn" data-emotion="focused" data-valence="pos" onclick="selectEmotion(this)"><span class="emotion-emoji">🎯</span><span class="emotion-label">Focused</span></button>
-          <button class="emotion-btn" data-emotion="creative" data-valence="pos" onclick="selectEmotion(this)"><span class="emotion-emoji">💡</span><span class="emotion-label">Creative</span></button>
-          <button class="emotion-btn" data-emotion="anxious" data-valence="neg" onclick="selectEmotion(this)"><span class="emotion-emoji">😰</span><span class="emotion-label">Anxious</span></button>
-          <button class="emotion-btn" data-emotion="overwhelmed" data-valence="neg" onclick="selectEmotion(this)"><span class="emotion-emoji">😵</span><span class="emotion-label">Overwhelmed</span></button>
-          <button class="emotion-btn" data-emotion="frustrated" data-valence="neg" onclick="selectEmotion(this)"><span class="emotion-emoji">😤</span><span class="emotion-label">Frustrated</span></button>
-          <button class="emotion-btn" data-emotion="bored" data-valence="neg" onclick="selectEmotion(this)"><span class="emotion-emoji">😑</span><span class="emotion-label">Bored</span></button>
-          <button class="emotion-btn" data-emotion="burnt-out" data-valence="neg" onclick="selectEmotion(this)"><span class="emotion-emoji">🪫</span><span class="emotion-label">Burnt out</span></button>
-          <button class="emotion-btn" data-emotion="uncertain" data-valence="neu" onclick="selectEmotion(this)"><span class="emotion-emoji">🤔</span><span class="emotion-label">Uncertain</span></button>
-          <button class="emotion-btn" data-emotion="disconnected" data-valence="neg" onclick="selectEmotion(this)"><span class="emotion-emoji">🔌</span><span class="emotion-label">Disconnected</span></button>
-          <button class="emotion-btn" data-emotion="undervalued" data-valence="neg" onclick="selectEmotion(this)"><span class="emotion-emoji">👻</span><span class="emotion-label">Undervalued</span></button>
+        <div class="emotion-grid">
+          <button class="emotion-btn" data-emotion="motivated" onclick="selectEmotion(this)"><span class="emotion-emoji">🔥</span><span class="emotion-label">Motivated</span></button>
+          <button class="emotion-btn" data-emotion="confident" onclick="selectEmotion(this)"><span class="emotion-emoji">💪</span><span class="emotion-label">Confident</span></button>
+          <button class="emotion-btn" data-emotion="proud" onclick="selectEmotion(this)"><span class="emotion-emoji">⭐</span><span class="emotion-label">Proud</span></button>
+          <button class="emotion-btn" data-emotion="grateful" onclick="selectEmotion(this)"><span class="emotion-emoji">🙏</span><span class="emotion-label">Grateful</span></button>
+          <button class="emotion-btn" data-emotion="calm" onclick="selectEmotion(this)"><span class="emotion-emoji">😌</span><span class="emotion-label">Calm</span></button>
+          <button class="emotion-btn" data-emotion="curious" onclick="selectEmotion(this)"><span class="emotion-emoji">🔍</span><span class="emotion-label">Curious</span></button>
+          <button class="emotion-btn" data-emotion="focused" onclick="selectEmotion(this)"><span class="emotion-emoji">🎯</span><span class="emotion-label">Focused</span></button>
+          <button class="emotion-btn" data-emotion="creative" onclick="selectEmotion(this)"><span class="emotion-emoji">💡</span><span class="emotion-label">Creative</span></button>
+          <button class="emotion-btn" data-emotion="anxious" onclick="selectEmotion(this)"><span class="emotion-emoji">😰</span><span class="emotion-label">Anxious</span></button>
+          <button class="emotion-btn" data-emotion="overwhelmed" onclick="selectEmotion(this)"><span class="emotion-emoji">😵</span><span class="emotion-label">Overwhelmed</span></button>
+          <button class="emotion-btn" data-emotion="frustrated" onclick="selectEmotion(this)"><span class="emotion-emoji">😤</span><span class="emotion-label">Frustrated</span></button>
+          <button class="emotion-btn" data-emotion="bored" onclick="selectEmotion(this)"><span class="emotion-emoji">😑</span><span class="emotion-label">Bored</span></button>
+          <button class="emotion-btn" data-emotion="burnt-out" onclick="selectEmotion(this)"><span class="emotion-emoji">🪫</span><span class="emotion-label">Burnt out</span></button>
+          <button class="emotion-btn" data-emotion="uncertain" onclick="selectEmotion(this)"><span class="emotion-emoji">🤔</span><span class="emotion-label">Uncertain</span></button>
+          <button class="emotion-btn" data-emotion="disconnected" onclick="selectEmotion(this)"><span class="emotion-emoji">🔌</span><span class="emotion-label">Disconnected</span></button>
+          <button class="emotion-btn" data-emotion="undervalued" onclick="selectEmotion(this)"><span class="emotion-emoji">👻</span><span class="emotion-label">Undervalued</span></button>
         </div>
         <span class="mood-section-label" style="margin-top:20px">Highlights & lowlights</span>
         <div class="form-row" style="margin-bottom:16px">
@@ -370,18 +413,15 @@ const SUPABASE_URL      = 'https://vfrfgfqwflpwsiadifcp.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmcmZnZnF3Zmxwd3NpYWRpZmNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDYwNjAsImV4cCI6MjA5NjMyMjA2MH0.mTcEnYUe4N_YYZMhML6cKrKmUkoIZ_zfHAhX4K9KcAo';
 const USER_ID = 'demo_user';
 
-let selectedCategory = 'win';
-let selectedImpact   = 3;
-let selectedEmotion  = null;
-let tags             = [];
-let chartInstances   = {};
+let selectedCategory = 'win', selectedImpact = 3, selectedEmotion = null, tags = [];
+let chartInstances = {};
 
-const IMPACT_LABELS = {1:'Minor mention',2:'Noteworthy',3:'Medium impact',4:'High impact',5:'Career-defining'};
+const IMPACT_LABELS      = {1:'Minor mention',2:'Noteworthy',3:'Medium impact',4:'High impact',5:'Career-defining'};
 const ENERGY_DESCS       = {1:'Exhausted — running on empty',2:'Low — struggling to focus',3:'Steady — getting through the week',4:'Good — feeling sharp and motivated',5:'Excellent — firing on all cylinders'};
 const SATISFACTION_DESCS = {1:'Very unhappy — something needs to change',2:'Unsatisfied — more bad than good',3:'Neutral — neither thriving nor struggling',4:'Satisfied — feeling good about progress',5:'Very satisfied — this is a great week'};
 const STRESS_DESCS       = {1:'Very calm — barely any pressure',2:'Light — comfortably in control',3:'Manageable — normal background pressure',4:'High — feeling the strain',5:'Overwhelmed — too much at once'};
-const CAT_COLORS = {win:'#C4654A',metric:'#5B7B8A',feedback:'#8B6BAE',decision:'#6B8F71',lesson:'#C4A46C',challenge:'#A09688'};
-const EMOTION_META = {
+const CAT_COLORS         = {win:'#C4654A',metric:'#5B7B8A',feedback:'#8B6BAE',decision:'#6B8F71',lesson:'#C4A46C',challenge:'#A09688'};
+const EMOTION_META       = {
   motivated:{emoji:'🔥',valence:'pos'},confident:{emoji:'💪',valence:'pos'},proud:{emoji:'⭐',valence:'pos'},grateful:{emoji:'🙏',valence:'pos'},
   calm:{emoji:'😌',valence:'pos'},curious:{emoji:'🔍',valence:'pos'},focused:{emoji:'🎯',valence:'pos'},creative:{emoji:'💡',valence:'pos'},
   anxious:{emoji:'😰',valence:'neg'},overwhelmed:{emoji:'😵',valence:'neg'},frustrated:{emoji:'😤',valence:'neg'},bored:{emoji:'😑',valence:'neg'},
@@ -390,7 +430,6 @@ const EMOTION_META = {
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
-
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.tab;
@@ -403,89 +442,62 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tab === 'mood')      { initMoodSliders(); loadMoodHistory(); }
     });
   });
-
   document.querySelectorAll('.cat-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      selectedCategory = btn.dataset.cat;
+      btn.classList.add('selected'); selectedCategory = btn.dataset.cat;
     });
   });
-
   document.querySelectorAll('.impact-dot').forEach(dot => {
     dot.addEventListener('click', () => {
-      selectedImpact = parseInt(dot.dataset.val, 10);
+      selectedImpact = parseInt(dot.dataset.val);
       document.querySelectorAll('.impact-dot').forEach(d => d.classList.remove('selected'));
       dot.classList.add('selected');
       document.getElementById('impact-label').textContent = IMPACT_LABELS[selectedImpact];
     });
   });
-
   const container = document.getElementById('tags-container');
   const tagInput  = document.getElementById('tag-input');
   container.addEventListener('click', () => tagInput.focus());
   tagInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      const val = tagInput.value.trim().toLowerCase().replace(/,/g,'');
-      if (val && !tags.includes(val)) { tags.push(val); renderTags(); }
-      tagInput.value = '';
-    }
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); const val = tagInput.value.trim().toLowerCase().replace(/,/g,''); if (val && !tags.includes(val)) { tags.push(val); renderTags(); } tagInput.value = ''; }
     if (e.key === 'Backspace' && tagInput.value === '' && tags.length) { tags.pop(); renderTags(); }
   });
-
   document.getElementById('submit-btn').addEventListener('click', submitEntry);
 });
 
 function renderTags() {
-  const container = document.getElementById('tags-container');
-  const inp = document.getElementById('tag-input');
+  const container = document.getElementById('tags-container'), inp = document.getElementById('tag-input');
   container.innerHTML = '';
-  tags.forEach(tag => {
-    const pill = document.createElement('span');
-    pill.className = 'tag-pill';
-    pill.innerHTML = tag + '<button onclick="removeTag(\'' + tag + '\')">×</button>';
-    container.appendChild(pill);
-  });
-  container.appendChild(inp);
-  inp.focus();
+  tags.forEach(tag => { const pill = document.createElement('span'); pill.className = 'tag-pill'; pill.innerHTML = tag + '<button onclick="removeTag(\'' + tag + '\')">×</button>'; container.appendChild(pill); });
+  container.appendChild(inp); inp.focus();
 }
 function removeTag(tag) { tags = tags.filter(t => t !== tag); renderTags(); }
 
 async function sbFetch(path, options = {}) {
   const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
     ...options,
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation',
-      ...(options.headers || {}),
-    },
+    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation', ...(options.headers || {}) },
   });
   if (!res.ok) throw new Error('Supabase error: ' + await res.text());
-  const text = await res.text();
-  return text ? JSON.parse(text) : [];
+  const text = await res.text(); return text ? JSON.parse(text) : [];
 }
 
 async function submitEntry() {
-  const title   = document.getElementById('entry-title').value.trim();
+  const title = document.getElementById('entry-title').value.trim();
   const content = document.getElementById('entry-content').value.trim();
-  const date    = document.getElementById('entry-date').value;
-  if (!title)   return showToast('Please add a title');
+  const date = document.getElementById('entry-date').value;
+  if (!title) return showToast('Please add a title');
   if (!content) return showToast('Please add some content');
-  if (!date)    return showToast('Please select a date');
+  if (!date) return showToast('Please select a date');
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
   document.getElementById('write-loading').style.display = 'flex';
   document.getElementById('write-result').innerHTML = '';
   try {
-    await sbFetch('journal_entries', {
-      method: 'POST',
-      body: JSON.stringify({ user_id: USER_ID, category: selectedCategory, title, content, impact_level: selectedImpact, tags, entry_date: date }),
-    });
+    await sbFetch('journal_entries', { method: 'POST', body: JSON.stringify({ user_id: USER_ID, category: selectedCategory, title, content, impact_level: selectedImpact, tags, entry_date: date }) });
     document.getElementById('write-loading').style.display = 'none';
-    document.getElementById('write-result').innerHTML = '<div class="success-banner">✓ Entry saved successfully.</div>';
+    document.getElementById('write-result').innerHTML = '<div class="success-banner">✓ Entry saved. Go to <strong>Insights</strong> to get your AI summary.</div>';
     document.getElementById('entry-title').value = '';
     document.getElementById('entry-content').value = '';
     document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
@@ -499,8 +511,7 @@ async function submitEntry() {
 }
 
 async function loadEntries() {
-  const listEl = document.getElementById('entries-list');
-  const statsEl = document.getElementById('entries-stats');
+  const listEl = document.getElementById('entries-list'), statsEl = document.getElementById('entries-stats');
   statsEl.style.display = 'none'; listEl.innerHTML = '';
   document.getElementById('entries-loading').style.display = 'flex';
   try {
@@ -510,347 +521,203 @@ async function loadEntries() {
     const avg = entries.reduce((s,e)=>s+(e.impact_level||0),0)/entries.length;
     const cats = {}; entries.forEach(e=>{cats[e.category]=(cats[e.category]||0)+1;});
     const top = Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
-    statsEl.innerHTML =
-      '<div class="stat"><span class="stat-val">'+entries.length+'</span><span class="stat-label sans">Total entries</span></div>'+
-      '<div class="stat"><span class="stat-val">'+entries.filter(e=>e.category==='win').length+'</span><span class="stat-label sans">Wins logged</span></div>'+
-      '<div class="stat"><span class="stat-val">'+avg.toFixed(1)+'</span><span class="stat-label sans">Avg. impact</span></div>'+
-      '<div class="stat"><span class="stat-val" style="font-size:16px;padding-top:4px">'+(top?top[0]:'—')+'</span><span class="stat-label sans">Top category</span></div>';
+    statsEl.innerHTML = '<div class="stat"><span class="stat-val">'+entries.length+'</span><span class="stat-label sans">Total entries</span></div><div class="stat"><span class="stat-val">'+entries.filter(e=>e.category==='win').length+'</span><span class="stat-label sans">Wins logged</span></div><div class="stat"><span class="stat-val">'+avg.toFixed(1)+'</span><span class="stat-label sans">Avg. impact</span></div><div class="stat"><span class="stat-val" style="font-size:16px;padding-top:4px">'+(top?top[0]:'—')+'</span><span class="stat-label sans">Top category</span></div>';
     statsEl.style.display = 'flex';
     entries.forEach(e => {
       const snippet = e.content.length>160?e.content.slice(0,160)+'…':e.content;
       const tagLine = e.tags&&e.tags.length?' · '+e.tags.join(', '):'';
-      const card = document.createElement('div');
-      card.className = 'entry-card'; card.dataset.cat = e.category;
+      const card = document.createElement('div'); card.className = 'entry-card'; card.dataset.cat = e.category;
       card.innerHTML = '<div class="entry-top"><div class="entry-title">'+e.title+'</div><span class="badge badge-'+e.category+'">'+e.category+'</span></div><div class="entry-snippet sans">'+snippet+'</div><div class="entry-meta">'+e.entry_date+' · Impact '+e.impact_level+'/5'+tagLine+'</div>';
       listEl.appendChild(card);
     });
+  } catch(err) { document.getElementById('entries-loading').style.display = 'none'; listEl.innerHTML = '<div class="empty-state">Error: '+err.message+'</div>'; }
+}
+
+// ── Insights — AI summaries via server ───────────────────
+async function generateInsights() {
+  const btn = document.getElementById('insights-generate-btn');
+  const el  = document.getElementById('insights-content');
+  btn.disabled = true;
+  document.getElementById('insights-loading').style.display = 'flex';
+  el.innerHTML = '';
+  try {
+    const entries = await sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.desc&limit=50');
+    if (!entries || entries.length === 0) {
+      document.getElementById('insights-loading').style.display = 'none';
+      el.innerHTML = '<div class="empty-state"><i class="ti ti-notebook"></i>Write at least one entry first.</div>';
+      btn.disabled = false; return;
+    }
+    const res = await fetch('/api/insights', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries }),
+    });
+    if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Server error'); }
+    const data = await res.json();
+    document.getElementById('insights-loading').style.display = 'none';
+    renderInsights(data, entries.length);
   } catch(err) {
-    document.getElementById('entries-loading').style.display = 'none';
-    listEl.innerHTML = '<div class="empty-state">Error: '+err.message+'</div>';
+    document.getElementById('insights-loading').style.display = 'none';
+    el.innerHTML = '<div class="error-banner">Error: ' + err.message + '</div>';
+    console.error(err);
   }
+  btn.disabled = false;
+}
+
+function renderInsights(d, entryCount) {
+  const el = document.getElementById('insights-content');
+  const winsHtml = (d.key_wins||[]).map(w=>'<li>'+w+'</li>').join('');
+  const skillsHtml = (d.top_skills||[]).map(s=>'<span class="skill-pill">'+s+'</span>').join('');
+  const starsHtml = (d.star_stories||[]).map(s=>`
+    <div class="star-card">
+      <div class="star-card-title">${s.title}</div>
+      <div class="star-row"><div class="star-key">Situation</div><div class="star-val">${s.situation}</div></div>
+      <div class="star-row"><div class="star-key">Task</div><div class="star-val">${s.task}</div></div>
+      <div class="star-row"><div class="star-key">Action</div><div class="star-val">${s.action}</div></div>
+      <div class="star-row"><div class="star-key">Result</div><div class="star-val">${s.result}</div></div>
+    </div>`).join('');
+
+  el.innerHTML = `
+    <p class="insights-meta">${entryCount} entries analysed · Generated ${new Date().toLocaleDateString('en',{month:'long',day:'numeric',year:'numeric'})}</p>
+
+    <div class="insight-block accent">
+      <div class="insight-block-label">Career summary</div>
+      <div class="insight-block-body">${d.career_summary||''}</div>
+    </div>
+
+    <div class="insight-block">
+      <div class="insight-block-label">Key wins</div>
+      <ul class="win-list">${winsHtml}</ul>
+    </div>
+
+    <div class="insight-block">
+      <div class="insight-block-label">Top skills demonstrated</div>
+      <div class="skill-pills" style="margin-top:4px">${skillsHtml}</div>
+    </div>
+
+    <div class="insight-block">
+      <div class="insight-block-label">Promotion case</div>
+      <div class="insight-block-body">${d.promotion_case||''}</div>
+    </div>
+
+    ${starsHtml ? `<div class="insight-block">
+      <div class="insight-block-label">Interview stories — STAR format</div>
+      ${starsHtml}
+    </div>` : ''}
+
+    ${d.linkedin_update ? `<div class="insight-block">
+      <div class="insight-block-label">LinkedIn update draft</div>
+      <div class="linkedin-box">${d.linkedin_update}</div>
+      <button class="copy-btn" onclick="copyLinkedIn()"><i class="ti ti-copy"></i> Copy to clipboard</button>
+    </div>` : ''}
+
+    <div class="insight-block">
+      <div class="insight-block-label">Pattern to notice</div>
+      <div class="insight-block-body">${d.growth_areas||''}</div>
+    </div>
+
+    <div class="insight-block accent">
+      <div class="insight-block-label">Next 30 days</div>
+      <div class="insight-block-body" style="font-style:italic">${d.next_focus||''}</div>
+    </div>`;
+}
+
+function copyLinkedIn() {
+  const text = document.querySelector('.linkedin-box').textContent;
+  navigator.clipboard.writeText(text).then(()=>showToast('Copied to clipboard!'));
 }
 
 // ── Analytics ─────────────────────────────────────────────
 async function loadAnalytics() {
   const el = document.getElementById('analytics-content');
-  el.innerHTML = '';
-  document.getElementById('analytics-loading').style.display = 'flex';
+  el.innerHTML = ''; document.getElementById('analytics-loading').style.display = 'flex';
   try {
     const [entries, moodRows] = await Promise.all([
-      sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.asc&limit=500'),
-      sbFetch('weekly_mood?user_id=eq.' + USER_ID + '&order=week_of.asc&limit=200'),
+      sbFetch('journal_entries?user_id=eq.'+USER_ID+'&order=entry_date.asc&limit=500'),
+      sbFetch('weekly_mood?user_id=eq.'+USER_ID+'&order=week_of.asc&limit=200'),
     ]);
     document.getElementById('analytics-loading').style.display = 'none';
-
-    if (!entries || entries.length === 0) {
-      el.innerHTML = '<div class="empty-state"><i class="ti ti-chart-bar"></i>No entries yet — start writing to see analytics.</div>';
-      return;
-    }
-
-    el.innerHTML = `
-      <div class="charts-grid">
-        <div class="chart-card"><div class="chart-title">Distribution</div><div class="chart-subtitle">Entries by category</div><div class="chart-wrap"><canvas id="chart-category"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">Impact</div><div class="chart-subtitle">How impactful are your entries?</div><div id="impact-bars" style="margin-top:16px"></div></div>
-        <div class="chart-card full"><div class="chart-title">Activity</div><div class="chart-subtitle">Entries logged per week</div><div class="chart-wrap tall"><canvas id="chart-timeline"></canvas></div></div>
-        <div class="chart-card full"><div class="chart-title">Composition</div><div class="chart-subtitle">Category mix over time</div><div class="chart-wrap tall"><canvas id="chart-stacked"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">Tags</div><div class="chart-subtitle">Most used tags</div><div id="top-tags-content" style="margin-top:8px"></div></div>
-        <div class="chart-card"><div class="chart-title">Impact by category</div><div class="chart-subtitle">Average impact score per type</div><div class="chart-wrap"><canvas id="chart-impact-cat"></canvas></div></div>
-        <div class="chart-card full"><div class="chart-title">Emotion frequency</div><div class="chart-subtitle">How often each emotion appears in your weekly mood log</div><div id="emotion-freq" style="margin-top:8px"></div></div>
-        <div class="chart-card full"><div class="chart-title">Mood over time</div><div class="chart-subtitle">Energy, satisfaction and stress week by week</div><div class="chart-wrap tall"><canvas id="chart-mood-timeline"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">Emotional balance</div><div class="chart-subtitle">Positive vs negative weeks</div><div class="chart-wrap"><canvas id="chart-valence"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">Avg mood by metric</div><div class="chart-subtitle">Mean score across all weeks</div><div id="mood-avg-bars" style="margin-top:16px"></div></div>
-      </div>`;
-
-    buildCategoryDonut(entries);
-    buildImpactBars(entries);
-    buildTimeline(entries);
-    buildStacked(entries);
-    buildTopTags(entries);
-    buildImpactByCategory(entries);
-    buildEmotionFrequency(moodRows);
-    buildMoodTimeline(moodRows);
-    buildValenceDonut(moodRows);
-    buildMoodAvgBars(moodRows);
-
-  } catch(err) {
-    document.getElementById('analytics-loading').style.display = 'none';
-    el.innerHTML = '<div class="empty-state">Error: '+err.message+'</div>';
-    console.error(err);
-  }
+    if (!entries||entries.length===0){el.innerHTML='<div class="empty-state"><i class="ti ti-chart-bar"></i>No entries yet.</div>';return;}
+    el.innerHTML=`<div class="charts-grid">
+      <div class="chart-card"><div class="chart-title">Distribution</div><div class="chart-subtitle">Entries by category</div><div class="chart-wrap"><canvas id="chart-category"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Impact</div><div class="chart-subtitle">How impactful are your entries?</div><div id="impact-bars" style="margin-top:16px"></div></div>
+      <div class="chart-card full"><div class="chart-title">Activity</div><div class="chart-subtitle">Entries logged per week</div><div class="chart-wrap tall"><canvas id="chart-timeline"></canvas></div></div>
+      <div class="chart-card full"><div class="chart-title">Composition</div><div class="chart-subtitle">Category mix over time</div><div class="chart-wrap tall"><canvas id="chart-stacked"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Tags</div><div class="chart-subtitle">Most used tags</div><div id="top-tags-content" style="margin-top:8px"></div></div>
+      <div class="chart-card"><div class="chart-title">Impact by category</div><div class="chart-subtitle">Average impact score per type</div><div class="chart-wrap"><canvas id="chart-impact-cat"></canvas></div></div>
+      <div class="chart-card full"><div class="chart-title">Emotion frequency</div><div class="chart-subtitle">How often each emotion appears in your weekly mood log</div><div id="emotion-freq" style="margin-top:8px"></div></div>
+      <div class="chart-card full"><div class="chart-title">Mood over time</div><div class="chart-subtitle">Energy, satisfaction and stress week by week</div><div class="chart-wrap tall"><canvas id="chart-mood-timeline"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Emotional balance</div><div class="chart-subtitle">Positive vs negative weeks</div><div class="chart-wrap"><canvas id="chart-valence"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Avg mood by metric</div><div class="chart-subtitle">Mean score across all weeks</div><div id="mood-avg-bars" style="margin-top:16px"></div></div>
+    </div>`;
+    buildCategoryDonut(entries); buildImpactBars(entries); buildTimeline(entries); buildStacked(entries); buildTopTags(entries); buildImpactByCategory(entries);
+    buildEmotionFrequency(moodRows); buildMoodTimeline(moodRows); buildValenceDonut(moodRows); buildMoodAvgBars(moodRows);
+  } catch(err){ document.getElementById('analytics-loading').style.display='none'; el.innerHTML='<div class="empty-state">Error: '+err.message+'</div>'; }
 }
 
-function destroyChart(id) { if(chartInstances[id]){chartInstances[id].destroy();delete chartInstances[id];} }
-
-function buildCategoryDonut(entries) {
-  destroyChart('category');
-  const cats={};entries.forEach(e=>{cats[e.category]=(cats[e.category]||0)+1;});
-  const labels=Object.keys(cats),data=labels.map(l=>cats[l]),colors=labels.map(l=>CAT_COLORS[l]||'#888');
-  chartInstances['category']=new Chart(document.getElementById('chart-category').getContext('2d'),{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},color:'#6B6560',boxWidth:12}}}}});
-}
-
-function buildImpactBars(entries) {
-  const counts={1:0,2:0,3:0,4:0,5:0};entries.forEach(e=>{if(e.impact_level)counts[e.impact_level]++;});
-  const max=Math.max(...Object.values(counts),1);
-  let html='';
-  for(let i=5;i>=1;i--){const pct=Math.round((counts[i]/max)*100);html+='<div class="impact-bar-row"><div class="impact-bar-label">'+i+'</div><div class="impact-bar-track"><div class="impact-bar-fill" style="width:'+pct+'%"></div></div><div class="impact-bar-count">'+counts[i]+'</div></div>';}
-  document.getElementById('impact-bars').innerHTML=html;
-}
-
-function buildTimeline(entries) {
-  destroyChart('timeline');
-  const weeks={};
-  entries.forEach(e=>{const d=new Date(e.entry_date);const m=new Date(d);m.setDate(d.getDate()-((d.getDay()+6)%7));const k=m.toISOString().split('T')[0];weeks[k]=(weeks[k]||0)+1;});
-  const sorted=Object.keys(weeks).sort();
-  chartInstances['timeline']=new Chart(document.getElementById('chart-timeline').getContext('2d'),{type:'line',data:{labels:sorted.map(d=>{const dt=new Date(d);return dt.toLocaleDateString('en',{month:'short',day:'numeric'});}),datasets:[{label:'Entries',data:sorted.map(k=>weeks[k]),borderColor:'#C4654A',backgroundColor:'rgba(196,101,74,0.08)',fill:true,tension:0.4,pointBackgroundColor:'#C4654A',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10}}},y:{grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10},stepSize:1},beginAtZero:true}}}});
-}
-
-function buildStacked(entries) {
-  destroyChart('stacked');
-  const CATS=['win','metric','feedback','decision','lesson','challenge'];
-  const months={};
-  entries.forEach(e=>{const d=new Date(e.entry_date);const k=d.toLocaleDateString('en',{month:'short',year:'2-digit'});if(!months[k])months[k]={};months[k][e.category]=(months[k][e.category]||0)+1;});
-  const labels=Object.keys(months);
-  chartInstances['stacked']=new Chart(document.getElementById('chart-stacked').getContext('2d'),{type:'bar',data:{labels,datasets:CATS.map(cat=>({label:cat,data:labels.map(m=>months[m][cat]||0),backgroundColor:CAT_COLORS[cat],borderRadius:2}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},color:'#6B6560',boxWidth:10}}},scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#A09688',font:{size:10}}},y:{stacked:true,grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10},stepSize:1},beginAtZero:true}}}});
-}
-
-function buildTopTags(entries) {
-  const tagCounts={};entries.forEach(e=>{(e.tags||[]).forEach(t=>{tagCounts[t]=(tagCounts[t]||0)+1;});});
-  const sorted=Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]).slice(0,12);
-  const el=document.getElementById('top-tags-content');
-  if(!sorted.length){el.innerHTML='<p style="font-size:13px;color:#A09688">No tags yet.</p>';return;}
-  el.innerHTML='<div class="top-tags">'+sorted.map(([tag,count])=>'<span class="top-tag">'+tag+'<span class="top-tag-count">'+count+'</span></span>').join('')+'</div>';
-}
-
-function buildImpactByCategory(entries) {
-  destroyChart('impact-cat');
-  const CATS=['win','metric','feedback','decision','lesson','challenge'];
-  const sums={},counts={};
-  entries.forEach(e=>{if(!e.impact_level)return;sums[e.category]=(sums[e.category]||0)+e.impact_level;counts[e.category]=(counts[e.category]||0)+1;});
-  const avgs=CATS.map(c=>counts[c]?+(sums[c]/counts[c]).toFixed(2):0);
-  chartInstances['impact-cat']=new Chart(document.getElementById('chart-impact-cat').getContext('2d'),{type:'bar',data:{labels:CATS,datasets:[{data:avgs,backgroundColor:CATS.map(c=>CAT_COLORS[c]),borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#A09688',font:{size:10}}},y:{min:0,max:5,grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10},stepSize:1}}}}});
-}
-
-// ── Emotion analytics ────────────────────────────────────
-function buildEmotionFrequency(moodRows) {
-  const el = document.getElementById('emotion-freq');
-  if (!moodRows || moodRows.length === 0) {
-    el.innerHTML = '<p style="font-size:13px;color:#A09688;padding:8px 0">No mood entries yet — log your weekly mood to see emotion patterns.</p>';
-    return;
-  }
-  const counts = {};
-  moodRows.forEach(r => { if (r.primary_emotion) counts[r.primary_emotion] = (counts[r.primary_emotion]||0)+1; });
-  if (!Object.keys(counts).length) {
-    el.innerHTML = '<p style="font-size:13px;color:#A09688;padding:8px 0">No emotions logged yet — select a primary emotion when logging your weekly mood.</p>';
-    return;
-  }
-  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  const max = sorted[0][1];
-  const VALENCE_COLORS = { pos:'#6B8F71', neg:'#C4654A', neu:'#C4A46C' };
-  let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">';
-  sorted.forEach(([emotion, count]) => {
-    const meta = EMOTION_META[emotion] || { emoji:'?', valence:'neu' };
-    const pct  = Math.round((count/max)*100);
-    const col  = VALENCE_COLORS[meta.valence] || '#A09688';
-    html += '<div class="emotion-freq-row">' +
-      '<div class="emotion-freq-emoji">' + meta.emoji + '</div>' +
-      '<div class="emotion-freq-label">' + emotion + '</div>' +
-      '<div class="emotion-freq-track"><div class="emotion-freq-fill" style="width:' + pct + '%;background:' + col + '"></div></div>' +
-      '<div class="emotion-freq-count">' + count + '</div>' +
-    '</div>';
-  });
-  html += '</div>';
-  // Valence summary below
-  const pos = moodRows.filter(r=>r.primary_emotion && EMOTION_META[r.primary_emotion]?.valence==='pos').length;
-  const neg = moodRows.filter(r=>r.primary_emotion && EMOTION_META[r.primary_emotion]?.valence==='neg').length;
-  const neu = moodRows.filter(r=>r.primary_emotion && EMOTION_META[r.primary_emotion]?.valence==='neu').length;
-  const total = pos + neg + neu;
-  if (total > 0) {
-    html += '<div style="display:flex;gap:16px;margin-top:16px;padding-top:12px;border-top:1px solid #EDE8E0">' +
-      '<div style="font-family:-apple-system,sans-serif;font-size:12px"><span style="color:#6B8F71;font-weight:600">' + Math.round(pos/total*100) + '%</span> <span style="color:#A09688">positive</span></div>' +
-      '<div style="font-family:-apple-system,sans-serif;font-size:12px"><span style="color:#C4654A;font-weight:600">' + Math.round(neg/total*100) + '%</span> <span style="color:#A09688">challenging</span></div>' +
-      '<div style="font-family:-apple-system,sans-serif;font-size:12px"><span style="color:#C4A46C;font-weight:600">' + Math.round(neu/total*100) + '%</span> <span style="color:#A09688">neutral</span></div>' +
-    '</div>';
-  }
-  el.innerHTML = html;
-}
-
-function buildMoodTimeline(moodRows) {
-  destroyChart('mood-timeline');
-  const ctx = document.getElementById('chart-mood-timeline');
-  if (!moodRows || moodRows.length === 0) { ctx.parentElement.innerHTML = '<p style="font-size:13px;color:#A09688;padding:20px 0">No mood data yet.</p>'; return; }
-  const sorted = [...moodRows].sort((a,b)=>a.week_of.localeCompare(b.week_of));
-  const labels = sorted.map(r=>{ const d=new Date(r.week_of); return d.toLocaleDateString('en',{month:'short',day:'numeric'}); });
-  chartInstances['mood-timeline'] = new Chart(ctx.getContext('2d'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        { label:'Energy',       data:sorted.map(r=>r.energy_level),   borderColor:'#C4A46C', backgroundColor:'transparent', tension:0.4, pointRadius:4, pointBackgroundColor:'#C4A46C' },
-        { label:'Satisfaction', data:sorted.map(r=>r.satisfaction),   borderColor:'#6B8F71', backgroundColor:'transparent', tension:0.4, pointRadius:4, pointBackgroundColor:'#6B8F71' },
-        { label:'Stress',       data:sorted.map(r=>r.stress_level),   borderColor:'#C4654A', backgroundColor:'transparent', tension:0.4, pointRadius:4, pointBackgroundColor:'#C4654A', borderDash:[4,4] },
-      ]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, color:'#6B6560', boxWidth:12 } } },
-      scales:{
-        x:{ grid:{color:'#EDE8E0'}, ticks:{color:'#A09688',font:{size:10}} },
-        y:{ min:1, max:5, grid:{color:'#EDE8E0'}, ticks:{color:'#A09688',font:{size:10},stepSize:1} }
-      }
-    }
-  });
-}
-
-function buildValenceDonut(moodRows) {
-  destroyChart('valence');
-  const ctx = document.getElementById('chart-valence');
-  if (!moodRows || !moodRows.filter(r=>r.primary_emotion).length) {
-    ctx.parentElement.innerHTML = '<p style="font-size:13px;color:#A09688;padding:20px 0">No emotions logged yet.</p>'; return;
-  }
-  const pos = moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='pos').length;
-  const neg = moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='neg').length;
-  const neu = moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='neu').length;
-  chartInstances['valence'] = new Chart(ctx.getContext('2d'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Positive', 'Challenging', 'Neutral'],
-      datasets: [{ data:[pos,neg,neu], backgroundColor:['#6B8F71','#C4654A','#C4A46C'], borderWidth:2, borderColor:'#fff' }]
-    },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ font:{size:11}, color:'#6B6560', boxWidth:12 } } } }
-  });
-}
-
-function buildMoodAvgBars(moodRows) {
-  const el = document.getElementById('mood-avg-bars');
-  if (!moodRows || moodRows.length === 0) { el.innerHTML = '<p style="font-size:13px;color:#A09688;padding:8px 0">No mood data yet.</p>'; return; }
-  const metrics = [
-    { key:'energy_level',  label:'Energy',       color:'#C4A46C' },
-    { key:'satisfaction',  label:'Satisfaction',  color:'#6B8F71' },
-    { key:'stress_level',  label:'Stress',        color:'#C4654A' },
-  ];
-  let html = '';
-  metrics.forEach(({key,label,color}) => {
-    const vals = moodRows.map(r=>r[key]).filter(v=>v);
-    const avg  = vals.length ? (vals.reduce((s,v)=>s+v,0)/vals.length) : 0;
-    const pct  = Math.round((avg/5)*100);
-    html += '<div class="impact-bar-row">' +
-      '<div style="font-family:-apple-system,sans-serif;font-size:11px;color:#6B6560;min-width:80px">'+label+'</div>' +
-      '<div class="impact-bar-track"><div class="impact-bar-fill" style="width:'+pct+'%;background:'+color+'"></div></div>' +
-      '<div style="font-family:\'SF Mono\',monospace;font-size:11px;color:'+color+';font-weight:600;min-width:28px;text-align:right">'+avg.toFixed(1)+'</div>' +
-    '</div>';
-  });
-  el.innerHTML = html;
-}
+function destroyChart(id){if(chartInstances[id]){chartInstances[id].destroy();delete chartInstances[id];}}
+function buildCategoryDonut(e){destroyChart('category');const c={};e.forEach(x=>{c[x.category]=(c[x.category]||0)+1;});const l=Object.keys(c);chartInstances['category']=new Chart(document.getElementById('chart-category').getContext('2d'),{type:'doughnut',data:{labels:l,datasets:[{data:l.map(x=>c[x]),backgroundColor:l.map(x=>CAT_COLORS[x]),borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},color:'#6B6560',boxWidth:12}}}}});}
+function buildImpactBars(entries){const c={1:0,2:0,3:0,4:0,5:0};entries.forEach(e=>{if(e.impact_level)c[e.impact_level]++;});const max=Math.max(...Object.values(c),1);let h='';for(let i=5;i>=1;i--){h+='<div class="impact-bar-row"><div class="impact-bar-label">'+i+'</div><div class="impact-bar-track"><div class="impact-bar-fill" style="width:'+Math.round(c[i]/max*100)+'%"></div></div><div class="impact-bar-count">'+c[i]+'</div></div>';}document.getElementById('impact-bars').innerHTML=h;}
+function buildTimeline(entries){destroyChart('timeline');const w={};entries.forEach(e=>{const d=new Date(e.entry_date);const m=new Date(d);m.setDate(d.getDate()-((d.getDay()+6)%7));const k=m.toISOString().split('T')[0];w[k]=(w[k]||0)+1;});const s=Object.keys(w).sort();chartInstances['timeline']=new Chart(document.getElementById('chart-timeline').getContext('2d'),{type:'line',data:{labels:s.map(d=>new Date(d).toLocaleDateString('en',{month:'short',day:'numeric'})),datasets:[{label:'Entries',data:s.map(k=>w[k]),borderColor:'#C4654A',backgroundColor:'rgba(196,101,74,0.08)',fill:true,tension:0.4,pointBackgroundColor:'#C4654A',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10}}},y:{grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10},stepSize:1},beginAtZero:true}}}});}
+function buildStacked(entries){destroyChart('stacked');const CATS=['win','metric','feedback','decision','lesson','challenge'];const m={};entries.forEach(e=>{const k=new Date(e.entry_date).toLocaleDateString('en',{month:'short',year:'2-digit'});if(!m[k])m[k]={};m[k][e.category]=(m[k][e.category]||0)+1;});const l=Object.keys(m);chartInstances['stacked']=new Chart(document.getElementById('chart-stacked').getContext('2d'),{type:'bar',data:{labels:l,datasets:CATS.map(c=>({label:c,data:l.map(k=>m[k][c]||0),backgroundColor:CAT_COLORS[c],borderRadius:2}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},color:'#6B6560',boxWidth:10}}},scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#A09688',font:{size:10}}},y:{stacked:true,grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10},stepSize:1},beginAtZero:true}}}});}
+function buildTopTags(entries){const t={};entries.forEach(e=>{(e.tags||[]).forEach(x=>{t[x]=(t[x]||0)+1;});});const s=Object.entries(t).sort((a,b)=>b[1]-a[1]).slice(0,12);const el=document.getElementById('top-tags-content');el.innerHTML=s.length?'<div class="top-tags">'+s.map(([t,c])=>'<span class="top-tag">'+t+'<span class="top-tag-count">'+c+'</span></span>').join('')+'</div>':'<p style="font-size:13px;color:#A09688">No tags yet.</p>';}
+function buildImpactByCategory(entries){destroyChart('impact-cat');const CATS=['win','metric','feedback','decision','lesson','challenge'];const s={},c={};entries.forEach(e=>{if(!e.impact_level)return;s[e.category]=(s[e.category]||0)+e.impact_level;c[e.category]=(c[e.category]||0)+1;});chartInstances['impact-cat']=new Chart(document.getElementById('chart-impact-cat').getContext('2d'),{type:'bar',data:{labels:CATS,datasets:[{data:CATS.map(x=>c[x]?+(s[x]/c[x]).toFixed(2):0),backgroundColor:CATS.map(x=>CAT_COLORS[x]),borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#A09688',font:{size:10}}},y:{min:0,max:5,grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10},stepSize:1}}}}});}
+function buildEmotionFrequency(moodRows){const el=document.getElementById('emotion-freq');if(!moodRows||moodRows.length===0){el.innerHTML='<p style="font-size:13px;color:#A09688;padding:8px 0">No mood entries yet.</p>';return;}const c={};moodRows.forEach(r=>{if(r.primary_emotion)c[r.primary_emotion]=(c[r.primary_emotion]||0)+1;});if(!Object.keys(c).length){el.innerHTML='<p style="font-size:13px;color:#A09688;padding:8px 0">No emotions logged yet.</p>';return;}const sorted=Object.entries(c).sort((a,b)=>b[1]-a[1]);const max=sorted[0][1];const VC={pos:'#6B8F71',neg:'#C4654A',neu:'#C4A46C'};let h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">';sorted.forEach(([em,cnt])=>{const meta=EMOTION_META[em]||{emoji:'?',valence:'neu'};h+='<div class="emotion-freq-row"><div class="emotion-freq-emoji">'+meta.emoji+'</div><div class="emotion-freq-label">'+em+'</div><div class="emotion-freq-track"><div class="emotion-freq-fill" style="width:'+Math.round(cnt/max*100)+'%;background:'+VC[meta.valence]+'"></div></div><div class="emotion-freq-count">'+cnt+'</div></div>';});h+='</div>';const pos=moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='pos').length;const neg=moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='neg').length;const neu=moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='neu').length;const tot=pos+neg+neu;if(tot>0)h+='<div style="display:flex;gap:16px;margin-top:16px;padding-top:12px;border-top:1px solid #EDE8E0"><div class="sans" style="font-size:12px"><span style="color:#6B8F71;font-weight:600">'+Math.round(pos/tot*100)+'%</span> <span style="color:#A09688">positive</span></div><div class="sans" style="font-size:12px"><span style="color:#C4654A;font-weight:600">'+Math.round(neg/tot*100)+'%</span> <span style="color:#A09688">challenging</span></div><div class="sans" style="font-size:12px"><span style="color:#C4A46C;font-weight:600">'+Math.round(neu/tot*100)+'%</span> <span style="color:#A09688">neutral</span></div></div>';el.innerHTML=h;}
+function buildMoodTimeline(moodRows){destroyChart('mood-timeline');const ctx=document.getElementById('chart-mood-timeline');if(!moodRows||moodRows.length===0){ctx.parentElement.innerHTML='<p style="font-size:13px;color:#A09688;padding:20px 0">No mood data yet.</p>';return;}const s=[...moodRows].sort((a,b)=>a.week_of.localeCompare(b.week_of));chartInstances['mood-timeline']=new Chart(ctx.getContext('2d'),{type:'line',data:{labels:s.map(r=>new Date(r.week_of).toLocaleDateString('en',{month:'short',day:'numeric'})),datasets:[{label:'Energy',data:s.map(r=>r.energy_level),borderColor:'#C4A46C',backgroundColor:'transparent',tension:0.4,pointRadius:4,pointBackgroundColor:'#C4A46C'},{label:'Satisfaction',data:s.map(r=>r.satisfaction),borderColor:'#6B8F71',backgroundColor:'transparent',tension:0.4,pointRadius:4,pointBackgroundColor:'#6B8F71'},{label:'Stress',data:s.map(r=>r.stress_level),borderColor:'#C4654A',backgroundColor:'transparent',tension:0.4,pointRadius:4,pointBackgroundColor:'#C4654A',borderDash:[4,4]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},color:'#6B6560',boxWidth:12}}},scales:{x:{grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10}}},y:{min:1,max:5,grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10},stepSize:1}}}}});}
+function buildValenceDonut(moodRows){destroyChart('valence');const ctx=document.getElementById('chart-valence');if(!moodRows||!moodRows.filter(r=>r.primary_emotion).length){ctx.parentElement.innerHTML='<p style="font-size:13px;color:#A09688;padding:20px 0">No emotions logged yet.</p>';return;}const pos=moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='pos').length;const neg=moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='neg').length;const neu=moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='neu').length;chartInstances['valence']=new Chart(ctx.getContext('2d'),{type:'doughnut',data:{labels:['Positive','Challenging','Neutral'],datasets:[{data:[pos,neg,neu],backgroundColor:['#6B8F71','#C4654A','#C4A46C'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},color:'#6B6560',boxWidth:12}}}}});}
+function buildMoodAvgBars(moodRows){const el=document.getElementById('mood-avg-bars');if(!moodRows||moodRows.length===0){el.innerHTML='<p style="font-size:13px;color:#A09688;padding:8px 0">No mood data yet.</p>';return;}const metrics=[{key:'energy_level',label:'Energy',color:'#C4A46C'},{key:'satisfaction',label:'Satisfaction',color:'#6B8F71'},{key:'stress_level',label:'Stress',color:'#C4654A'}];let h='';metrics.forEach(({key,label,color})=>{const vals=moodRows.map(r=>r[key]).filter(v=>v);const avg=vals.length?vals.reduce((s,v)=>s+v,0)/vals.length:0;h+='<div class="impact-bar-row"><div style="font-family:-apple-system,sans-serif;font-size:11px;color:#6B6560;min-width:80px">'+label+'</div><div class="impact-bar-track"><div class="impact-bar-fill" style="width:'+Math.round(avg/5*100)+'%;background:'+color+'"></div></div><div style="font-family:\'SF Mono\',monospace;font-size:11px;color:'+color+';font-weight:600;min-width:28px;text-align:right">'+avg.toFixed(1)+'</div></div>';});el.innerHTML=h;}
 
 // ── Mood tab ──────────────────────────────────────────────
 function initMoodSliders() {
-  const sliders = [
-    {id:'slider-energy',       valId:'val-energy',       descId:'desc-energy',       descs:ENERGY_DESCS},
-    {id:'slider-satisfaction', valId:'val-satisfaction', descId:'desc-satisfaction', descs:SATISFACTION_DESCS},
-    {id:'slider-stress',       valId:'val-stress',       descId:'desc-stress',       descs:STRESS_DESCS},
-  ];
-  sliders.forEach(({id,valId,descId,descs}) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const update = () => {
-      const v = parseInt(el.value);
-      document.getElementById(valId).textContent = v;
-      document.getElementById(descId).textContent = descs[v];
-      el.style.setProperty('--pct', ((v-1)/4*100)+'%');
-    };
-    el.addEventListener('input', update);
-    update();
+  [{id:'slider-energy',valId:'val-energy',descId:'desc-energy',descs:ENERGY_DESCS},{id:'slider-satisfaction',valId:'val-satisfaction',descId:'desc-satisfaction',descs:SATISFACTION_DESCS},{id:'slider-stress',valId:'val-stress',descId:'desc-stress',descs:STRESS_DESCS}].forEach(({id,valId,descId,descs})=>{
+    const el=document.getElementById(id);if(!el)return;
+    const update=()=>{const v=parseInt(el.value);document.getElementById(valId).textContent=v;document.getElementById(descId).textContent=descs[v];el.style.setProperty('--pct',((v-1)/4*100)+'%');};
+    el.addEventListener('input',update);update();
   });
-  const today = new Date();
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - ((today.getDay()+6)%7));
-  document.getElementById('mood-week').value = monday.toISOString().split('T')[0];
-  document.getElementById('mood-submit-btn').addEventListener('click', submitMood);
+  const today=new Date(),monday=new Date(today);monday.setDate(today.getDate()-((today.getDay()+6)%7));
+  document.getElementById('mood-week').value=monday.toISOString().split('T')[0];
+  document.getElementById('mood-submit-btn').addEventListener('click',submitMood);
 }
 
 function selectEmotion(btn) {
-  document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('selected'));
-  if (selectedEmotion === btn.dataset.emotion) {
-    selectedEmotion = null;
-  } else {
-    btn.classList.add('selected');
-    selectedEmotion = btn.dataset.emotion;
-  }
+  document.querySelectorAll('.emotion-btn').forEach(b=>b.classList.remove('selected'));
+  if(selectedEmotion===btn.dataset.emotion){selectedEmotion=null;}else{btn.classList.add('selected');selectedEmotion=btn.dataset.emotion;}
 }
 
 async function submitMood() {
-  const weekOf       = document.getElementById('mood-week').value;
-  const energy       = parseInt(document.getElementById('slider-energy').value);
-  const satisfaction = parseInt(document.getElementById('slider-satisfaction').value);
-  const stress       = parseInt(document.getElementById('slider-stress').value);
-  const highlight    = document.getElementById('mood-highlight').value.trim();
-  const lowlight     = document.getElementById('mood-lowlight').value.trim();
-  const notes        = document.getElementById('mood-notes').value.trim();
-  if (!weekOf) return showToast('Please select a week');
-  const btn = document.getElementById('mood-submit-btn');
-  btn.disabled = true;
-  document.getElementById('mood-loading').style.display = 'flex';
-  document.getElementById('mood-result').innerHTML = '';
+  const weekOf=document.getElementById('mood-week').value;
+  if(!weekOf)return showToast('Please select a week');
+  const btn=document.getElementById('mood-submit-btn');btn.disabled=true;
+  document.getElementById('mood-loading').style.display='flex';document.getElementById('mood-result').innerHTML='';
   try {
-    await sbFetch('weekly_mood', {
-      method: 'POST',
-      headers: { 'Prefer': 'return=representation,resolution=merge-duplicates' },
-      body: JSON.stringify({ user_id:USER_ID, week_of:weekOf, energy_level:energy, satisfaction, stress_level:stress, primary_emotion:selectedEmotion, highlight, lowlight, notes }),
-    });
-    document.getElementById('mood-loading').style.display = 'none';
-    document.getElementById('mood-result').innerHTML = '<div class="success-banner">✓ Mood entry saved for week of ' + weekOf + '</div>';
-    document.getElementById('mood-highlight').value = '';
-    document.getElementById('mood-lowlight').value = '';
-    document.getElementById('mood-notes').value = '';
-    document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('selected'));
-    selectedEmotion = null;
-    loadMoodHistory();
-    showToast('Mood saved!');
-  } catch(err) {
-    document.getElementById('mood-loading').style.display = 'none';
-    document.getElementById('mood-result').innerHTML = '<div class="error-banner">Error: ' + err.message + '</div>';
-  }
-  btn.disabled = false;
+    await sbFetch('weekly_mood',{method:'POST',headers:{'Prefer':'return=representation,resolution=merge-duplicates'},body:JSON.stringify({user_id:USER_ID,week_of:weekOf,energy_level:parseInt(document.getElementById('slider-energy').value),satisfaction:parseInt(document.getElementById('slider-satisfaction').value),stress_level:parseInt(document.getElementById('slider-stress').value),primary_emotion:selectedEmotion,highlight:document.getElementById('mood-highlight').value.trim(),lowlight:document.getElementById('mood-lowlight').value.trim(),notes:document.getElementById('mood-notes').value.trim()})});
+    document.getElementById('mood-loading').style.display='none';
+    document.getElementById('mood-result').innerHTML='<div class="success-banner">✓ Mood entry saved for week of '+weekOf+'</div>';
+    document.getElementById('mood-highlight').value='';document.getElementById('mood-lowlight').value='';document.getElementById('mood-notes').value='';
+    document.querySelectorAll('.emotion-btn').forEach(b=>b.classList.remove('selected'));selectedEmotion=null;
+    loadMoodHistory();showToast('Mood saved!');
+  } catch(err){document.getElementById('mood-loading').style.display='none';document.getElementById('mood-result').innerHTML='<div class="error-banner">Error: '+err.message+'</div>';}
+  btn.disabled=false;
 }
 
 async function loadMoodHistory() {
-  const el = document.getElementById('mood-history-list');
-  el.innerHTML = '';
-  document.getElementById('mood-history-loading').style.display = 'flex';
+  const el=document.getElementById('mood-history-list');el.innerHTML='';document.getElementById('mood-history-loading').style.display='flex';
   try {
-    const rows = await sbFetch('weekly_mood?user_id=eq.' + USER_ID + '&order=week_of.desc&limit=12');
-    document.getElementById('mood-history-loading').style.display = 'none';
-    if (!rows || rows.length === 0) { el.innerHTML = '<div class="empty-state"><i class="ti ti-mood-smile"></i>No mood entries yet.</div>'; return; }
-    rows.forEach(r => {
-      const card = document.createElement('div');
-      card.className = 'mood-history-card';
-      const makeDots = v => { let d=''; for(let i=1;i<=5;i++) d+='<div class="mood-dot'+(i<=v?' on':'')+'"></div>'; return '<div class="mood-dots">'+d+'</div>'; };
-      const weekLabel = new Date(r.week_of).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});
-      const emotionBadge = r.primary_emotion && EMOTION_META[r.primary_emotion]
-        ? '<span style="font-family:-apple-system,sans-serif;font-size:11px;padding:3px 10px;background:#FAEAE6;color:#C4654A;border-radius:20px;white-space:nowrap">'+EMOTION_META[r.primary_emotion].emoji+' '+r.primary_emotion+'</span>'
-        : '';
-      card.innerHTML =
-        '<div class="mood-history-head"><div><div class="mood-history-week">Week of '+weekLabel+'</div>'+(r.highlight?'<div class="mood-history-title">'+(r.highlight.length>80?r.highlight.slice(0,80)+'…':r.highlight)+'</div>':'')+'</div>'+emotionBadge+'</div>'+
-        '<div class="mood-history-body">'+
-          '<div class="mood-metric"><span class="mood-metric-val">'+r.energy_level+'</span>'+makeDots(r.energy_level)+'<div class="mood-metric-label">Energy</div></div>'+
-          '<div class="mood-metric"><span class="mood-metric-val">'+r.satisfaction+'</span>'+makeDots(r.satisfaction)+'<div class="mood-metric-label">Satisfaction</div></div>'+
-          '<div class="mood-metric"><span class="mood-metric-val">'+r.stress_level+'</span>'+makeDots(r.stress_level)+'<div class="mood-metric-label">Stress</div></div>'+
-        '</div>'+
-        (r.lowlight?'<div style="padding:0 18px 12px;font-size:12px;color:#8A8178;font-family:-apple-system,sans-serif"><i class="ti ti-arrow-down" style="font-size:11px;color:#A09688"></i> '+(r.lowlight.length>100?r.lowlight.slice(0,100)+'…':r.lowlight)+'</div>':'');
+    const rows=await sbFetch('weekly_mood?user_id=eq.'+USER_ID+'&order=week_of.desc&limit=12');
+    document.getElementById('mood-history-loading').style.display='none';
+    if(!rows||rows.length===0){el.innerHTML='<div class="empty-state"><i class="ti ti-mood-smile"></i>No mood entries yet.</div>';return;}
+    rows.forEach(r=>{
+      const card=document.createElement('div');card.className='mood-history-card';
+      const mkDots=v=>{let d='';for(let i=1;i<=5;i++)d+='<div class="mood-dot'+(i<=v?' on':'')+'"></div>';return'<div class="mood-dots">'+d+'</div>';};
+      const wl=new Date(r.week_of).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});
+      const eb=r.primary_emotion&&EMOTION_META[r.primary_emotion]?'<span style="font-family:-apple-system,sans-serif;font-size:11px;padding:3px 10px;background:#FAEAE6;color:#C4654A;border-radius:20px;white-space:nowrap">'+EMOTION_META[r.primary_emotion].emoji+' '+r.primary_emotion+'</span>':'';
+      card.innerHTML='<div class="mood-history-head"><div><div class="mood-history-week">Week of '+wl+'</div>'+(r.highlight?'<div class="mood-history-title">'+(r.highlight.length>80?r.highlight.slice(0,80)+'…':r.highlight)+'</div>':'')+'</div>'+eb+'</div><div class="mood-history-body"><div class="mood-metric"><span class="mood-metric-val">'+r.energy_level+'</span>'+mkDots(r.energy_level)+'<div class="mood-metric-label">Energy</div></div><div class="mood-metric"><span class="mood-metric-val">'+r.satisfaction+'</span>'+mkDots(r.satisfaction)+'<div class="mood-metric-label">Satisfaction</div></div><div class="mood-metric"><span class="mood-metric-val">'+r.stress_level+'</span>'+mkDots(r.stress_level)+'<div class="mood-metric-label">Stress</div></div></div>'+(r.lowlight?'<div style="padding:0 18px 12px;font-size:12px;color:#8A8178;font-family:-apple-system,sans-serif">↓ '+(r.lowlight.length>100?r.lowlight.slice(0,100)+'…':r.lowlight)+'</div>':'');
       el.appendChild(card);
     });
-  } catch(err) {
-    document.getElementById('mood-history-loading').style.display = 'none';
-    el.innerHTML = '<div class="empty-state">Error: '+err.message+'</div>';
-  }
+  } catch(err){document.getElementById('mood-history-loading').style.display='none';el.innerHTML='<div class="empty-state">Error: '+err.message+'</div>';}
 }
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3000);
-}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 </script>
 </body>
 </html>
