@@ -5,86 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CareerLog</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
-// ── Goal picker ────────────────────────────────────────────
-const GOAL_LABELS = {
-  get_promoted:  { label: 'Get Promoted',   emoji: '🏆', color: '#854F0B', bg: '#FAEEDA' },
-  get_raise:     { label: 'Get a Raise',    emoji: '💰', color: '#3B6D11', bg: '#EAF3DE' },
-  land_new_job:  { label: 'Land a New Job', emoji: '🚀', color: '#185FA5', bg: '#E6F1FB' },
-};
-
-let selectedGoal = null;
-
-function selectGoal(btn) {
-  document.querySelectorAll('.goal-option').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  selectedGoal = btn.dataset.goal;
-  document.getElementById('goal-save-btn').disabled = false;
-}
-
-async function checkAndLoadGoal() {
-  try {
-    const token = currentSession?.access_token || '';
-    const res = await fetch(SUPABASE_URL + '/rest/v1/user_goals?user_id=eq.' + currentUser.id + '&limit=1', {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Prefer': 'return=representation' }
-    });
-    const rows = await res.json();
-    if (rows && rows.length > 0) {
-      updateGoalBadge(rows[0].goal);
-      return true;
-    }
-    return false;
-  } catch(e) { return false; }
-}
-
-function updateGoalBadge(goal) {
-  const meta = GOAL_LABELS[goal];
-  if (!meta) return;
-  const badge = document.getElementById('goal-badge');
-  badge.textContent = meta.emoji + ' ' + meta.label;
-  badge.style.background = meta.bg;
-  badge.style.color = meta.color;
-  badge.style.display = 'block';
-}
-
-function showGoalPicker() {
-  // Allow user to change goal from sidebar
-  document.getElementById('app-shell').classList.add('hidden');
-  document.getElementById('goal-screen').classList.remove('hidden');
-  // Reset selection
-  document.querySelectorAll('.goal-option').forEach(b => b.classList.remove('selected'));
-  selectedGoal = null;
-  document.getElementById('goal-save-btn').disabled = true;
-}
-
-async function saveGoal() {
-  if (!selectedGoal) return;
-  const btn = document.getElementById('goal-save-btn');
-  btn.disabled = true;
-  btn.textContent = 'Saving…';
-  try {
-    const token = currentSession?.access_token || '';
-    await fetch(SUPABASE_URL + '/rest/v1/user_goals', {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates,return=minimal',
-      },
-      body: JSON.stringify({ user_id: currentUser.id, goal: selectedGoal, updated_at: new Date().toISOString() }),
-    });
-    updateGoalBadge(selectedGoal);
-    document.getElementById('goal-screen').classList.add('hidden');
-    document.getElementById('app-shell').classList.remove('hidden');
-    initApp();
-  } catch(err) {
-    btn.disabled = false;
-    btn.textContent = 'Start logging my career →';
-    alert('Error saving goal: ' + err.message);
-  }
-}
-
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -686,6 +607,84 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Goal picker ────────────────────────────────────────────
+const GOAL_LABELS = {
+  get_promoted:  { label: 'Get Promoted',   emoji: '🏆', color: '#854F0B', bg: '#FAEEDA' },
+  get_raise:     { label: 'Get a Raise',    emoji: '💰', color: '#3B6D11', bg: '#EAF3DE' },
+  land_new_job:  { label: 'Land a New Job', emoji: '🚀', color: '#185FA5', bg: '#E6F1FB' },
+};
+
+let selectedGoal = null;
+
+function selectGoal(btn) {
+  document.querySelectorAll('.goal-option').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedGoal = btn.dataset.goal;
+  document.getElementById('goal-save-btn').disabled = false;
+}
+
+async function checkAndLoadGoal() {
+  try {
+    const token = currentSession?.access_token || '';
+    const res = await fetch(SUPABASE_URL + '/rest/v1/user_goals?user_id=eq.' + currentUser.id + '&limit=1', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Prefer': 'return=representation' }
+    });
+    const rows = await res.json();
+    if (rows && rows.length > 0) {
+      updateGoalBadge(rows[0].goal);
+      return true;
+    }
+    return false;
+  } catch(e) { return false; }
+}
+
+function updateGoalBadge(goal) {
+  const meta = GOAL_LABELS[goal];
+  if (!meta) return;
+  const badge = document.getElementById('goal-badge');
+  badge.textContent = meta.emoji + ' ' + meta.label;
+  badge.style.background = meta.bg;
+  badge.style.color = meta.color;
+  badge.style.display = 'block';
+}
+
+function showGoalPicker() {
+  // Allow user to change goal from sidebar
+  document.getElementById('app-shell').classList.add('hidden');
+  document.getElementById('goal-screen').classList.remove('hidden');
+  // Reset selection
+  document.querySelectorAll('.goal-option').forEach(b => b.classList.remove('selected'));
+  selectedGoal = null;
+  document.getElementById('goal-save-btn').disabled = true;
+}
+
+async function saveGoal() {
+  if (!selectedGoal) return;
+  const btn = document.getElementById('goal-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  try {
+    const token = currentSession?.access_token || '';
+    await fetch(SUPABASE_URL + '/rest/v1/user_goals', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify({ user_id: currentUser.id, goal: selectedGoal, updated_at: new Date().toISOString() }),
+    });
+    updateGoalBadge(selectedGoal);
+    document.getElementById('goal-screen').classList.add('hidden');
+    document.getElementById('app-shell').classList.remove('hidden');
+    initApp();
+  } catch(err) {
+    btn.disabled = false;
+    btn.textContent = 'Start logging my career →';
+    alert('Error saving goal: ' + err.message);
+  }
+}
+
 // ── Supabase client ────────────────────────────────────────
 const SUPABASE_URL = 'https://vfrfgfqwflpwsiadifcp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmcmZnZnF3Zmxwd3NpYWRpZmNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDYwNjAsImV4cCI6MjA5NjMyMjA2MH0.mTcEnYUe4N_YYZMhML6cKrKmUkoIZ_zfHAhX4K9KcAo';
