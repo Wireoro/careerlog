@@ -404,6 +404,13 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
     <button class="goal-save-btn" id="goal-save-btn" onclick="saveGoal()" disabled>
       Start logging my career →
     </button>
+    <p id="goal-lock-warning" style="display:none;margin-top:12px;font-family:-apple-system,sans-serif;font-size:12px;color:#C4654A;text-align:center;line-height:1.5">
+      <i class="ti ti-lock" style="vertical-align:-2px;margin-right:4px"></i>
+      Your goal is locked because you have entries. Changing it will permanently delete all your journal entries, mood logs, and score data.
+    </p>
+    <button id="goal-confirm-change-btn" style="display:none;width:100%;margin-top:8px;padding:11px;background:#FAEAE6;color:#C4654A;border:1px solid #E8A090;border-radius:8px;font-family:-apple-system,sans-serif;font-size:13px;cursor:pointer" onclick="confirmGoalChange()">
+      I understand — delete everything and change my goal
+    </button>
   </div>
 </div>
 
@@ -413,7 +420,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
     <div>
       <div class="logo"><h1>Career<em>Log</em></h1></div>
       <div class="logo-sub">your track record</div>
-      <div id="goal-badge" style="display:none;margin:4px 8px 0;padding:4px 10px;border-radius:20px;font-family:-apple-system,sans-serif;font-size:11px;background:#FAEAE6;color:#C4654A;cursor:pointer" onclick="showGoalPicker()"></div>
+      <div id="goal-badge" style="display:none;margin:4px 8px 0;padding:4px 10px;border-radius:20px;font-family:-apple-system,sans-serif;font-size:11px;cursor:pointer" onclick="tryShowGoalPicker()"></div>
     </div>
     <ul class="nav-links">
       <li><button class="nav-btn active" data-tab="write"><i class="ti ti-edit"></i> Write</button></li>
@@ -609,18 +616,25 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 <script>
 // ── Goal picker ────────────────────────────────────────────
 const GOAL_LABELS = {
-  get_promoted:  { label: 'Get Promoted',   emoji: '🏆', color: '#854F0B', bg: '#FAEEDA' },
-  get_raise:     { label: 'Get a Raise',    emoji: '💰', color: '#3B6D11', bg: '#EAF3DE' },
-  land_new_job:  { label: 'Land a New Job', emoji: '🚀', color: '#185FA5', bg: '#E6F1FB' },
+  get_promoted:  { label: 'Get Promoted',   emoji: '🏆', color: '#633806', bg: '#FAEEDA' },
+  get_raise:     { label: 'Get a Raise',    emoji: '💰', color: '#27500A', bg: '#EAF3DE' },
+  land_new_job:  { label: 'Land a New Job', emoji: '🚀', color: '#0C447C', bg: '#E6F1FB' },
 };
 
-let selectedGoal = null;
+let selectedGoal    = null;
+let goalIsLocked    = false;   // true once the user has journal entries
+let pendingGoalChange = false; // user clicked "I understand"
 
 function selectGoal(btn) {
+  if (goalIsLocked && !pendingGoalChange) return; // locked — ignore clicks
   document.querySelectorAll('.goal-option').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   selectedGoal = btn.dataset.goal;
-  document.getElementById('goal-save-btn').disabled = false;
+  if (!goalIsLocked) {
+    document.getElementById('goal-save-btn').disabled = false;
+  } else if (pendingGoalChange) {
+    document.getElementById('goal-save-btn').disabled = false;
+  }
 }
 
 async function checkAndLoadGoal() {
@@ -638,6 +652,19 @@ async function checkAndLoadGoal() {
   } catch(e) { return false; }
 }
 
+async function checkGoalLocked() {
+  // Goal is locked if user has at least one journal entry
+  try {
+    const token = currentSession?.access_token || '';
+    const res = await fetch(SUPABASE_URL + '/rest/v1/journal_entries?user_id=eq.' + currentUser.id + '&limit=1&select=id', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Prefer': 'return=representation' }
+    });
+    const rows = await res.json();
+    goalIsLocked = rows && rows.length > 0;
+    return goalIsLocked;
+  } catch(e) { return false; }
+}
+
 function updateGoalBadge(goal) {
   const meta = GOAL_LABELS[goal];
   if (!meta) return;
@@ -646,16 +673,79 @@ function updateGoalBadge(goal) {
   badge.style.background = meta.bg;
   badge.style.color = meta.color;
   badge.style.display = 'block';
+  // Show lock icon if locked
+  if (goalIsLocked) {
+    badge.title = 'Goal locked — you have entries logged';
+  } else {
+    badge.title = 'Click to change goal';
+  }
 }
 
-function showGoalPicker() {
-  // Allow user to change goal from sidebar
+async function tryShowGoalPicker() {
+  await checkGoalLocked();
+  if (goalIsLocked) {
+    // Show locked state in goal picker
+    showGoalPicker(true);
+  } else {
+    showGoalPicker(false);
+  }
+}
+
+function showGoalPicker(locked) {
+  pendingGoalChange = false;
   document.getElementById('app-shell').classList.add('hidden');
   document.getElementById('goal-screen').classList.remove('hidden');
-  // Reset selection
   document.querySelectorAll('.goal-option').forEach(b => b.classList.remove('selected'));
   selectedGoal = null;
-  document.getElementById('goal-save-btn').disabled = true;
+
+  const saveBtn    = document.getElementById('goal-save-btn');
+  const warning    = document.getElementById('goal-lock-warning');
+  const confirmBtn = document.getElementById('goal-confirm-change-btn');
+
+  if (locked) {
+    // Locked UI — show warning, hide normal save, show confirm-delete button
+    saveBtn.style.display    = 'none';
+    warning.style.display    = 'block';
+    confirmBtn.style.display = 'block';
+    // Dim the option buttons visually
+    document.querySelectorAll('.goal-option').forEach(b => {
+      b.style.opacity = '0.5';
+      b.style.cursor  = 'not-allowed';
+    });
+  } else {
+    // Unlocked — normal picker
+    saveBtn.style.display    = 'block';
+    saveBtn.disabled         = true;
+    saveBtn.textContent      = 'Start logging my career →';
+    warning.style.display    = 'none';
+    confirmBtn.style.display = 'none';
+    document.querySelectorAll('.goal-option').forEach(b => {
+      b.style.opacity = '1';
+      b.style.cursor  = 'pointer';
+    });
+  }
+}
+
+function confirmGoalChange() {
+  // User confirmed they want to delete everything and change goal
+  pendingGoalChange = true;
+  const saveBtn    = document.getElementById('goal-save-btn');
+  const warning    = document.getElementById('goal-lock-warning');
+  const confirmBtn = document.getElementById('goal-confirm-change-btn');
+
+  // Now let them pick
+  document.querySelectorAll('.goal-option').forEach(b => {
+    b.style.opacity = '1';
+    b.style.cursor  = 'pointer';
+  });
+
+  // Show save button with destructive styling, hide confirm button
+  saveBtn.style.display    = 'block';
+  saveBtn.disabled         = true;
+  saveBtn.textContent      = 'Delete everything and set new goal';
+  saveBtn.style.background = '#C4654A';
+  confirmBtn.style.display = 'none';
+  warning.innerHTML        = '<i class="ti ti-alert-triangle" style="vertical-align:-2px;margin-right:4px"></i> Select your new goal below. This cannot be undone.';
 }
 
 async function saveGoal() {
@@ -663,8 +753,24 @@ async function saveGoal() {
   const btn = document.getElementById('goal-save-btn');
   btn.disabled = true;
   btn.textContent = 'Saving…';
+
   try {
     const token = currentSession?.access_token || '';
+
+    // If changing a locked goal — delete ALL user data first
+    if (pendingGoalChange) {
+      btn.textContent = 'Deleting all data…';
+      const tables = ['entry_insights', 'journal_entries', 'weekly_mood', 'career_scores'];
+      for (const table of tables) {
+        await fetch(SUPABASE_URL + '/rest/v1/' + table + '?user_id=eq.' + currentUser.id, {
+          method: 'DELETE',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token },
+        });
+      }
+    }
+
+    // Save the new goal
+    btn.textContent = 'Saving goal…';
     await fetch(SUPABASE_URL + '/rest/v1/user_goals', {
       method: 'POST',
       headers: {
@@ -674,14 +780,21 @@ async function saveGoal() {
       },
       body: JSON.stringify({ user_id: currentUser.id, goal: selectedGoal, updated_at: new Date().toISOString() }),
     });
+
+    // Reset state
+    goalIsLocked    = false;
+    pendingGoalChange = false;
+    btn.style.background = '#2C2520';
+
     updateGoalBadge(selectedGoal);
     document.getElementById('goal-screen').classList.add('hidden');
     document.getElementById('app-shell').classList.remove('hidden');
     initApp();
+
   } catch(err) {
     btn.disabled = false;
-    btn.textContent = 'Start logging my career →';
-    alert('Error saving goal: ' + err.message);
+    btn.textContent = 'Try again';
+    alert('Error: ' + err.message);
   }
 }
 
