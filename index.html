@@ -5,127 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CareerLog</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script>
-// ── Career Score tab ──────────────────────────────────────
-async function loadScore() {
-  const el = document.getElementById('score-content');
-  el.innerHTML = '';
-  document.getElementById('score-loading').style.display = 'flex';
-
-  try {
-    const [entries, moodRows] = await Promise.all([
-      sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.asc&limit=500'),
-      sbFetch('weekly_mood?user_id=eq.' + USER_ID + '&order=week_of.asc&limit=200'),
-    ]);
-
-    if (!entries || entries.length === 0) {
-      document.getElementById('score-loading').style.display = 'none';
-      el.innerHTML = '<div class="empty-state"><i class="ti ti-award"></i>Write at least one entry to get your career score.</div>';
-      return;
-    }
-
-    const res = await fetch('/api/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entries, moodRows }),
-    });
-    if (!res.ok) throw new Error('Score API error: ' + res.status);
-    const data = await res.json();
-
-    document.getElementById('score-loading').style.display = 'none';
-    renderScore(data, entries.length);
-
-  } catch(err) {
-    document.getElementById('score-loading').style.display = 'none';
-    el.innerHTML = '<div class="error-banner">Error: ' + err.message + '</div>';
-    console.error(err);
-  }
-}
-
-function renderScore(data, entryCount) {
-  const el    = document.getElementById('score-content');
-  const score = data.score;
-  const tier  = data.tier;
-  const bd    = data.breakdown;
-  const pct   = Math.round(((score - 300) / 550) * 100);
-
-  const PILLAR_LABELS = {
-    consistency:   { label: 'Consistency',    icon: 'ti-calendar-stats', desc: 'How regularly you log entries' },
-    impactQuality: { label: 'Impact quality', icon: 'ti-trophy',         desc: 'Quality and impact level of your entries' },
-    categoryMix:   { label: 'Category mix',   icon: 'ti-chart-pie',      desc: 'Variety across entry types' },
-    selfAwareness: { label: 'Self-awareness', icon: 'ti-mood-smile',     desc: 'Weekly mood and emotion tracking' },
-    entryDepth:    { label: 'Entry depth',    icon: 'ti-pencil',         desc: 'Detail, word count and tags per entry' },
-  };
-
-  // Tips based on which pillar is lowest
-  const sortedPillars = Object.entries(bd).sort((a,b) => a[1].contribution - b[1].contribution);
-  const weakest = sortedPillars[0][0];
-  const TIPS = {
-    consistency:   ['Log at least 3 entries per week', 'Build a streak — consistency is worth 25% of your score', 'Avoid gaps longer than a week'],
-    impactQuality: ['Aim for impact level 4–5 entries — they score 3–6× more', 'Always include a number or metric in your content', 'Focus on outcomes, not just activities'],
-    categoryMix:   ['Use all 6 categories for the highest mix score', 'Log feedback and lessons — they get extra points', 'Avoid logging only one type of entry'],
-    selfAwareness: ['Log your weekly mood every Monday', 'Always select a primary emotion', 'Fill in both the highlight and lowlight fields'],
-    entryDepth:    ['Write at least 100 words per entry for bonus points', 'Add 3+ tags to every entry', 'Short entries under 30 words lose points'],
-  };
-
-  const tipsHtml = (TIPS[weakest] || []).map(t =>
-    '<div class="tip-row"><i class="ti ti-arrow-up-right tip-icon" aria-hidden="true"></i>' + t + '</div>'
-  ).join('');
-
-  const pillarsHtml = Object.entries(PILLAR_LABELS).map(([key, meta]) => {
-    const contrib = bd[key] ? bd[key].contribution : 0;
-    const maxContrib = 550 * (bd[key] ? bd[key].weight : 0.2);
-    const pillPct = maxContrib > 0 ? Math.round((contrib / maxContrib) * 100) : 0;
-    return `<div class="pillar-card">
-      <div class="pillar-head">
-        <div class="pillar-name"><i class="ti ${meta.icon}" aria-hidden="true" style="font-size:14px;vertical-align:-2px;margin-right:6px"></i>${meta.label}</div>
-        <div class="pillar-pts">+${contrib} pts</div>
-      </div>
-      <div class="pillar-bar-track"><div class="pillar-bar-fill" style="width:${pillPct}%"></div></div>
-      <div class="pillar-desc">${meta.desc}</div>
-    </div>`;
-  }).join('');
-
-  el.innerHTML = `
-    <div class="score-hero">
-      <div class="score-number" style="color:${tier.color}">${score}</div>
-      <div class="score-grade" style="color:${tier.color}">${tier.grade}</div>
-      <div class="score-tier">${tier.label} · based on ${entryCount} entries</div>
-      <div class="score-gauge">
-        <div class="gauge-track"><div class="gauge-fill" style="width:${pct}%;background:${tier.color}"></div></div>
-        <div class="gauge-labels"><span>300</span><span>400</span><span>500</span><span>600</span><span>700</span><span>850</span></div>
-      </div>
-    </div>
-
-    <div style="margin-bottom:12px">
-      <div class="page-header" style="margin-bottom:12px"><h1 style="font-size:18px">Score <em>breakdown</em></h1></div>
-      <div class="pillars-grid">${pillarsHtml}</div>
-    </div>
-
-    <div class="score-tips">
-      <div class="page-header" style="margin-bottom:10px"><h1 style="font-size:16px">How to <em>improve</em></h1></div>
-      <p style="font-size:12px;color:#A09688;font-family:-apple-system,sans-serif;margin-bottom:10px">Your lowest pillar is <strong style="color:#C4654A">${PILLAR_LABELS[weakest].label}</strong> — focus here for the biggest score jump.</p>
-      ${tipsHtml}
-    </div>`;
-}
-
-</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;background:#FAF7F2;color:#2C2520;min-height:100vh;overflow-x:hidden}
-.sans{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif}
-.mono{font-family:'SF Mono','Menlo','Monaco','Courier New',monospace}
-#app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
-.sidebar{background:#fff;border-right:1px solid #DDD5C8;padding:32px 16px;display:flex;flex-direction:column;gap:28px;position:sticky;top:0;height:100vh;overflow-y:auto}
+body{font-family:'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;background:#FAF7F2;color:#2C2520;min-height:100vh}
+.sans{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.mono{font-family:'SF Mono','Menlo',monospace}
+
+/* ── Auth screen ───────────────────────────────────────── */
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+#auth-screen.hidden{display:none}
+.auth-card{background:#fff;border:1px solid #EDE8E0;border-radius:16px;padding:40px;width:100%;max-width:400px}
+.auth-logo{font-size:26px;font-weight:400;color:#2C2520;margin-bottom:6px}
+.auth-logo em{font-style:italic;color:#C4654A}
+.auth-tagline{font-family:-apple-system,sans-serif;font-size:13px;color:#A09688;margin-bottom:32px}
+.auth-tabs{display:flex;gap:0;margin-bottom:24px;border:1px solid #EDE8E0;border-radius:8px;overflow:hidden}
+.auth-tab{flex:1;padding:9px;background:#FAF7F2;border:none;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:14px;color:#8A8178;cursor:pointer;transition:all 0.15s}
+.auth-tab.active{background:#fff;color:#2C2520;font-style:italic}
+.auth-field{margin-bottom:16px}
+.auth-field label{display:block;font-family:'SF Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;margin-bottom:6px}
+.auth-field input{width:100%;padding:10px 13px;border:1px solid #DDD5C8;border-radius:8px;background:#FAF7F2;color:#2C2520;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:14px;outline:none;transition:border-color 0.15s}
+.auth-field input:focus{border-color:#C4654A;background:#fff}
+.auth-btn{width:100%;padding:12px;background:#2C2520;color:#FAF7F2;border:none;border-radius:8px;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:15px;font-style:italic;cursor:pointer;transition:opacity 0.15s;margin-top:8px}
+.auth-btn:hover{opacity:0.82}
+.auth-btn:disabled{opacity:0.4;cursor:not-allowed}
+.auth-error{background:#FAEAE6;border:1px solid #E8A090;border-radius:8px;padding:10px 13px;font-family:-apple-system,sans-serif;font-size:13px;color:#C4654A;margin-top:12px;display:none}
+.auth-success{background:#EAF3DE;border:1px solid #B8D99A;border-radius:8px;padding:10px 13px;font-family:-apple-system,sans-serif;font-size:13px;color:#3B6D11;margin-top:12px;display:none}
+.auth-divider{text-align:center;font-family:-apple-system,sans-serif;font-size:12px;color:#A09688;margin:16px 0}
+
+/* ── App shell ─────────────────────────────────────────── */
+#app-shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+#app-shell.hidden{display:none}
+.sidebar{background:#fff;border-right:1px solid #DDD5C8;padding:32px 16px;display:flex;flex-direction:column;gap:24px;position:sticky;top:0;height:100vh;overflow-y:auto}
 .logo h1{font-size:22px;font-weight:400;color:#2C2520;letter-spacing:-0.01em;padding:0 8px}
 .logo h1 em{font-style:italic;color:#C4654A}
-.logo-sub{font-family:'SF Mono','Menlo',monospace;font-size:10px;color:#A09688;letter-spacing:0.04em;padding:4px 8px 0}
-.nav-links{list-style:none;display:flex;flex-direction:column;gap:2px}
-.nav-btn{width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border:none;border-radius:8px;background:transparent;color:#8A8178;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:14px;cursor:pointer;text-align:left;transition:background 0.12s,color 0.12s}
+.logo-sub{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;letter-spacing:0.04em;padding:2px 8px 0}
+.nav-links{list-style:none;display:flex;flex-direction:column;gap:2px;flex:1}
+.nav-btn{width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border:none;border-radius:8px;background:transparent;color:#8A8178;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:14px;cursor:pointer;text-align:left;transition:all 0.12s}
 .nav-btn:hover{background:#FAF7F2;color:#2C2520}
 .nav-btn.active{background:rgba(196,101,74,0.08);color:#C4654A;font-style:italic}
 .nav-btn i{font-size:16px}
+.user-panel{border-top:1px solid #EDE8E0;padding-top:16px}
+.user-email{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;padding:0 8px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.signout-btn{width:100%;display:flex;align-items:center;gap:8px;padding:8px 12px;border:none;border-radius:8px;background:transparent;color:#8A8178;font-family:-apple-system,sans-serif;font-size:12px;cursor:pointer;transition:all 0.12s}
+.signout-btn:hover{background:#FAEAE6;color:#C4654A}
 .main{padding:32px 40px 80px;max-width:1000px}
 .tab-section{display:none}
 .tab-section.active{display:block}
@@ -133,7 +57,9 @@ body{font-family:'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,G
 .page-header h1{font-size:28px;font-weight:400;color:#2C2520;letter-spacing:-0.01em}
 .page-header h1 em{font-style:italic;color:#C4654A}
 .page-header p{font-size:13px;color:#8A8178;margin-top:4px}
-.stats-bar{display:flex;gap:0;margin-bottom:28px;border:1px solid #DDD5C8;border-radius:12px;overflow:hidden;background:#fff}
+
+/* ── Shared components ─────────────────────────────────── */
+.stats-bar{display:flex;margin-bottom:28px;border:1px solid #DDD5C8;border-radius:12px;overflow:hidden;background:#fff}
 .stat{flex:1;padding:16px 20px;border-right:1px solid #EDE8E0;text-align:center}
 .stat:last-child{border-right:none}
 .stat-val{font-size:26px;font-weight:300;color:#C4654A;display:block;letter-spacing:-0.02em}
@@ -141,15 +67,14 @@ body{font-family:'Iowan Old Style','Palatino Linotype','Book Antiqua',Palatino,G
 .form-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:24px}
 .form-group{margin-bottom:18px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-label{display:block;font-family:'SF Mono','Menlo',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;margin-bottom:7px}
+label{display:block;font-family:'SF Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;margin-bottom:7px}
 label .muted{color:#C4B8AC}
-input[type="text"],input[type="date"],textarea{width:100%;padding:9px 13px;border:1px solid #DDD5C8;border-radius:8px;background:#FAF7F2;color:#2C2520;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:14px;outline:none;transition:border-color 0.15s,background 0.15s}
+input[type="text"],input[type="date"],textarea{width:100%;padding:9px 13px;border:1px solid #DDD5C8;border-radius:8px;background:#FAF7F2;color:#2C2520;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:14px;outline:none;transition:border-color 0.15s}
 input:focus,textarea:focus{border-color:#C4654A;background:#fff}
 textarea{min-height:110px;resize:vertical;line-height:1.6}
 .category-grid{display:flex;gap:6px;flex-wrap:wrap}
 .cat-btn{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;border:1px solid #DDD5C8;background:#fff;font-family:-apple-system,sans-serif;font-size:11px;color:#6B6560;cursor:pointer;transition:all 0.15s;user-select:none}
 .cat-btn:hover{border-color:#C4654A;color:#C4654A}
-.cat-btn i{font-size:13px}
 .cat-btn.selected[data-cat="win"]{background:#C4654A;border-color:#C4654A;color:#fff}
 .cat-btn.selected[data-cat="metric"]{background:#5B7B8A;border-color:#5B7B8A;color:#fff}
 .cat-btn.selected[data-cat="feedback"]{background:#8B6BAE;border-color:#8B6BAE;color:#fff}
@@ -160,7 +85,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .impact-dot{width:34px;height:34px;border-radius:50%;border:1px solid #DDD5C8;background:#FAF7F2;color:#8A8178;font-family:'SF Mono',monospace;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.12s}
 .impact-dot:hover{border-color:#C4654A;color:#C4654A}
 .impact-dot.selected{background:#C4654A;border-color:#C4654A;color:#fff}
-.impact-label{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;margin-top:5px;letter-spacing:0.02em}
+.impact-label{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;margin-top:5px}
 .tags-input{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 10px;border:1px solid #DDD5C8;border-radius:8px;background:#FAF7F2;cursor:text;min-height:40px;transition:border-color 0.15s}
 .tags-input:focus-within{border-color:#C4654A;background:#fff}
 .tags-input input{border:none;background:transparent;outline:none;padding:0;min-width:100px;flex:1;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:13px;color:#2C2520}
@@ -179,7 +104,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .success-banner{margin-top:1rem;background:#EAF3DE;border:1px solid #B8D99A;border-radius:10px;padding:14px 16px;font-size:14px;color:#3B6D11}
 .error-banner{margin-top:1rem;background:#FAEAE6;border:1px solid #E8A090;border-radius:10px;padding:14px 16px;font-size:14px;color:#C4654A}
 .entry-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:18px 20px;margin-bottom:10px;position:relative;overflow:hidden;transition:border-color 0.2s}
-.entry-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.entry-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
 .entry-card[data-cat="win"]::before{background:#C4654A}
 .entry-card[data-cat="metric"]::before{background:#5B7B8A}
 .entry-card[data-cat="feedback"]::before{background:#8B6BAE}
@@ -188,43 +113,51 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .entry-card[data-cat="challenge"]::before{background:#A09688}
 .entry-card:hover{border-color:#C4654A}
 .entry-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
-.entry-title{font-size:14px;color:#2C2520;line-height:1.45;font-weight:500}
+.entry-title{font-size:14px;color:#2C2520;font-weight:500}
 .entry-snippet{font-size:13px;color:#8A8178;line-height:1.5}
 .entry-meta{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;margin-top:8px}
-.badge{font-family:'SF Mono',monospace;font-size:9px;font-weight:600;padding:3px 8px;border-radius:4px;flex-shrink:0;white-space:nowrap}
+.badge{font-family:'SF Mono',monospace;font-size:9px;font-weight:600;padding:3px 8px;border-radius:4px;flex-shrink:0}
 .badge-win{background:#FAEAE6;color:#C4654A}
 .badge-metric{background:#E8F0F3;color:#5B7B8A}
 .badge-feedback{background:#F0EBF5;color:#8B6BAE}
 .badge-decision{background:#E8F2EA;color:#6B8F71}
 .badge-lesson{background:#F5F0E4;color:#C4A46C}
 .badge-challenge{background:#F0EEEB;color:#A09688}
-/* Charts */
+
+/* ── Charts ─────────────────────────────────────────────── */
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
 .chart-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:20px}
 .chart-card.full{grid-column:1/-1}
-.chart-title{font-family:'SF Mono','Menlo',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;margin-bottom:4px}
-.chart-subtitle{font-size:13px;color:#2C2520;margin-bottom:16px;font-weight:400}
+.chart-title{font-family:'SF Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;margin-bottom:4px}
+.chart-subtitle{font-size:13px;color:#2C2520;margin-bottom:16px}
 .chart-wrap{position:relative;height:220px}
 .chart-wrap.tall{height:280px}
 .impact-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .impact-bar-label{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;width:20px;text-align:right;flex-shrink:0}
 .impact-bar-track{flex:1;height:10px;background:#EDE8E0;border-radius:10px;overflow:hidden}
-.impact-bar-fill{height:100%;background:#C4654A;border-radius:10px;transition:width 0.6s ease}
+.impact-bar-fill{height:100%;background:#C4654A;border-radius:10px;transition:width 0.6s}
 .impact-bar-count{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;width:24px;flex-shrink:0}
 .top-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .top-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:#FAF7F2;border:1px solid #EDE8E0;border-radius:20px;font-family:-apple-system,sans-serif;font-size:11px;color:#6B6560}
 .top-tag-count{font-family:'SF Mono',monospace;font-size:10px;color:#C4654A}
-/* Insights */
+.emotion-freq-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.emotion-freq-emoji{font-size:18px;width:28px;text-align:center;flex-shrink:0}
+.emotion-freq-label{font-size:12px;color:#2C2520;min-width:90px;font-family:-apple-system,sans-serif}
+.emotion-freq-track{flex:1;height:8px;background:#EDE8E0;border-radius:8px;overflow:hidden}
+.emotion-freq-fill{height:100%;border-radius:8px;transition:width 0.6s}
+.emotion-freq-count{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;width:20px;text-align:right;flex-shrink:0}
+
+/* ── Insights ───────────────────────────────────────────── */
 .insights-generate-btn{display:flex;align-items:center;gap:10px;padding:14px 20px;background:#2C2520;color:#FAF7F2;border:none;border-radius:10px;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:15px;font-style:italic;cursor:pointer;transition:opacity 0.15s;margin-bottom:24px}
 .insights-generate-btn:hover{opacity:0.82}
 .insights-generate-btn:disabled{opacity:0.4;cursor:not-allowed}
 .insights-generate-btn i{font-style:normal;font-size:18px}
 .insight-block{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:20px 22px;margin-bottom:14px}
-.insight-block-label{font-family:'SF Mono','Menlo',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;padding-bottom:8px;border-bottom:1px solid #EDE8E0;margin-bottom:12px}
-.insight-block-body{font-size:14px;color:#2C2520;line-height:1.7}
 .insight-block.accent{border-color:#C4654A}
+.insight-block-label{font-family:'SF Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;padding-bottom:8px;border-bottom:1px solid #EDE8E0;margin-bottom:12px}
 .insight-block.accent .insight-block-label{color:#C4654A;border-bottom-color:rgba(196,101,74,0.2)}
-.win-list{list-style:none;padding:0}
+.insight-block-body{font-size:14px;color:#2C2520;line-height:1.7}
+.win-list{list-style:none}
 .win-list li{font-size:14px;color:#2C2520;line-height:1.6;padding:5px 0;border-bottom:0.5px solid #EDE8E0;display:flex;gap:8px}
 .win-list li:last-child{border-bottom:none}
 .win-list li::before{content:'→';color:#C4654A;flex-shrink:0}
@@ -233,16 +166,38 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .star-card{background:#FAF7F2;border:1px solid #EDE8E0;border-radius:10px;padding:14px 16px;margin-bottom:10px}
 .star-card-title{font-size:13px;font-weight:500;color:#2C2520;margin-bottom:10px}
 .star-row{display:grid;grid-template-columns:70px 1fr;gap:6px;margin-bottom:6px;align-items:start}
-.star-row:last-child{margin-bottom:0}
 .star-key{font-family:'SF Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:#A09688;padding-top:2px}
 .star-val{font-size:13px;color:#2C2520;line-height:1.5}
 .linkedin-box{background:#FAF7F2;border:1px solid #EDE8E0;border-radius:10px;padding:16px;font-size:13px;color:#2C2520;line-height:1.7;white-space:pre-wrap;font-family:-apple-system,sans-serif}
 .copy-btn{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 14px;border:1px solid #DDD5C8;border-radius:6px;background:#fff;font-family:-apple-system,sans-serif;font-size:12px;color:#6B6560;cursor:pointer}
 .copy-btn:hover{border-color:#C4654A;color:#C4654A}
 .insights-meta{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;margin-bottom:20px}
-/* Mood */
+
+/* ── Score ──────────────────────────────────────────────── */
+.score-hero{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:28px 24px;margin-bottom:16px;text-align:center}
+.score-number{font-size:72px;font-weight:300;line-height:1;letter-spacing:-0.04em;margin-bottom:6px}
+.score-grade{font-size:28px;font-weight:300;margin-top:4px}
+.score-tier{font-size:14px;color:#8A8178;margin-bottom:20px}
+.score-gauge{max-width:400px;margin:0 auto 20px}
+.gauge-track{height:10px;background:#EDE8E0;border-radius:10px;overflow:hidden;margin-bottom:6px}
+.gauge-fill{height:100%;border-radius:10px;transition:width 1s ease}
+.gauge-labels{display:flex;justify-content:space-between;font-family:'SF Mono',monospace;font-size:10px;color:#A09688}
+.pillars-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.pillar-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:16px}
+.pillar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pillar-name{font-size:13px;font-weight:500;color:#2C2520}
+.pillar-pts{font-family:'SF Mono',monospace;font-size:12px;color:#C4654A}
+.pillar-bar-track{height:6px;background:#EDE8E0;border-radius:6px;overflow:hidden;margin-bottom:6px}
+.pillar-bar-fill{height:100%;background:#C4654A;border-radius:6px;transition:width 0.8s}
+.pillar-desc{font-size:11px;color:#A09688;font-family:-apple-system,sans-serif}
+.score-tips{background:#FAF7F2;border:1px solid #EDE8E0;border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.tip-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:0.5px solid #EDE8E0;font-size:13px;color:#2C2520}
+.tip-row:last-child{border-bottom:none}
+.tip-icon{flex-shrink:0;color:#C4654A;font-size:15px}
+
+/* ── Mood ───────────────────────────────────────────────── */
 .mood-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:24px;margin-bottom:16px}
-.mood-section-label{font-family:'SF Mono','Menlo',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;margin-bottom:14px;display:block}
+.mood-section-label{font-family:'SF Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#A09688;margin-bottom:14px;display:block}
 .slider-group{margin-bottom:20px}
 .slider-row{display:flex;align-items:center;gap:14px;margin-bottom:4px}
 .slider-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
@@ -270,52 +225,8 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .mood-dots{display:flex;gap:4px;justify-content:center;margin-top:4px}
 .mood-dot{width:8px;height:8px;border-radius:50%;background:#EDE8E0}
 .mood-dot.on{background:#C4654A}
-/* Emotion analytics */
-.emotion-freq-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.emotion-freq-emoji{font-size:18px;width:28px;text-align:center;flex-shrink:0}
-.emotion-freq-label{font-size:12px;color:#2C2520;min-width:90px;font-family:-apple-system,sans-serif}
-.emotion-freq-track{flex:1;height:8px;background:#EDE8E0;border-radius:8px;overflow:hidden}
-.emotion-freq-fill{height:100%;border-radius:8px;transition:width 0.6s ease}
-.emotion-freq-count{font-family:'SF Mono',monospace;font-size:10px;color:#A09688;width:20px;text-align:right;flex-shrink:0}
-.toast{position:fixed;bottom:24px;right:24px;background:#2C2520;color:#FAF7F2;padding:10px 16px;border-radius:8px;font-family:'SF Mono',monospace;font-size:12px;opacity:0;pointer-events:none;transition:opacity 0.25s;z-index:100}
-.toast.show{opacity:1}
-.empty-state{text-align:center;padding:80px 20px;color:#A09688;font-size:14px}
-.empty-state i{font-size:36px;display:block;margin-bottom:10px;opacity:0.3}
-@media(max-width:768px){
-  #app{grid-template-columns:1fr}
-  .sidebar{position:static;height:auto;flex-direction:row;align-items:center;padding:1rem 1.25rem;gap:1rem;overflow-x:auto}
-  .logo-sub{display:none}
-  .nav-links{flex-direction:row}
-  .main{padding:1.25rem 1rem 4rem}
-  .form-row,.star-row{grid-template-columns:1fr}
-  .stats-bar{flex-wrap:wrap}
-  .stat{min-width:50%}
-  .charts-grid{grid-template-columns:1fr}
-  .chart-card.full{grid-column:auto}
-  .emotion-grid{grid-template-columns:repeat(4,1fr)}
-}
 
-.score-hero{background:var(--color-background-primary);border:1px solid #EDE8E0;border-radius:12px;padding:28px 24px;margin-bottom:16px;text-align:center}
-.score-number{font-size:72px;font-weight:300;line-height:1;letter-spacing:-0.04em;margin-bottom:6px}
-.score-tier{font-size:14px;color:#8A8178;margin-bottom:20px}
-.score-gauge{max-width:400px;margin:0 auto 20px}
-.gauge-track{height:10px;background:#EDE8E0;border-radius:10px;overflow:hidden;margin-bottom:6px}
-.gauge-fill{height:100%;border-radius:10px;transition:width 1s ease}
-.gauge-labels{display:flex;justify-content:space-between;font-family:'SF Mono',monospace;font-size:10px;color:#A09688}
-.score-grade{font-size:28px;font-weight:300;margin-top:4px}
-.pillars-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-.pillar-card{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:16px}
-.pillar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.pillar-name{font-size:13px;font-weight:500;color:#2C2520}
-.pillar-pts{font-family:'SF Mono',monospace;font-size:12px;color:#C4654A}
-.pillar-bar-track{height:6px;background:#EDE8E0;border-radius:6px;overflow:hidden;margin-bottom:6px}
-.pillar-bar-fill{height:100%;border-radius:6px;background:#C4654A;transition:width 0.8s ease}
-.pillar-desc{font-size:11px;color:#A09688;font-family:-apple-system,sans-serif}
-.score-tips{background:#FAF7F2;border:1px solid #EDE8E0;border-radius:12px;padding:18px 20px;margin-bottom:16px}
-.tip-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:0.5px solid #EDE8E0;font-size:13px;color:#2C2520}
-.tip-row:last-child{border-bottom:none}
-.tip-icon{flex-shrink:0;width:20px;color:#C4654A;font-size:15px}
-
+/* ── Ladder ─────────────────────────────────────────────── */
 .ladder-search{background:#fff;border:1px solid #EDE8E0;border-radius:12px;padding:24px;margin-bottom:20px}
 .ladder-search-row{display:flex;gap:10px;align-items:flex-end}
 .ladder-search-row input{flex:1}
@@ -361,10 +272,79 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 .ladder-insight-row:last-child{border-bottom:none}
 .ladder-insight-row i{color:#C4654A;flex-shrink:0;font-size:15px;margin-top:1px}
 
+/* ── Misc ───────────────────────────────────────────────── */
+.toast{position:fixed;bottom:24px;right:24px;background:#2C2520;color:#FAF7F2;padding:10px 16px;border-radius:8px;font-family:'SF Mono',monospace;font-size:12px;opacity:0;pointer-events:none;transition:opacity 0.25s;z-index:100}
+.toast.show{opacity:1}
+.empty-state{text-align:center;padding:80px 20px;color:#A09688;font-size:14px}
+.empty-state i{font-size:36px;display:block;margin-bottom:10px;opacity:0.3}
+.hidden{display:none!important}
+@media(max-width:768px){
+  #app-shell{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;flex-direction:row;align-items:center;padding:1rem 1.25rem;gap:1rem;overflow-x:auto}
+  .logo-sub,.user-panel{display:none}
+  .nav-links{flex-direction:row;flex:unset}
+  .main{padding:1.25rem 1rem 4rem}
+  .form-row,.star-row{grid-template-columns:1fr}
+  .stats-bar,.charts-grid,.pillars-grid,.tracks-wrap.tracks-two{grid-template-columns:1fr}
+  .chart-card.full{grid-column:auto}
+  .emotion-grid{grid-template-columns:repeat(4,1fr)}
+}
 </style>
 </head>
 <body>
-<div id="app">
+
+<!-- ── AUTH SCREEN ───────────────────────────────────────── -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">Career<em>Log</em></div>
+    <div class="auth-tagline sans">Your track record, compounding daily.</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-signin" onclick="showTab('signin')">Sign in</button>
+      <button class="auth-tab" id="tab-signup" onclick="showTab('signup')">Create account</button>
+    </div>
+
+    <!-- Sign in -->
+    <div id="form-signin">
+      <div class="auth-field">
+        <label for="signin-email">Email</label>
+        <input type="email" id="signin-email" placeholder="you@company.com" autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label for="signin-password">Password</label>
+        <input type="password" id="signin-password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="auth-btn" id="signin-btn" onclick="signIn()">Sign in</button>
+      <div class="auth-divider">or</div>
+      <button class="auth-btn" style="background:#FAF7F2;color:#2C2520;border:1px solid #DDD5C8;font-style:normal;font-size:14px" onclick="signInWithGoogle()">
+        <i class="ti ti-brand-google" style="vertical-align:-2px;margin-right:6px"></i> Continue with Google
+      </button>
+      <div id="signin-error" class="auth-error"></div>
+    </div>
+
+    <!-- Sign up -->
+    <div id="form-signup" class="hidden">
+      <div class="auth-field">
+        <label for="signup-email">Email</label>
+        <input type="email" id="signup-email" placeholder="you@company.com" autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label for="signup-password">Password <span style="color:#C4B8AC;font-family:'SF Mono',monospace;font-size:9px">min 8 characters</span></label>
+        <input type="password" id="signup-password" placeholder="••••••••" autocomplete="new-password">
+      </div>
+      <div class="auth-field">
+        <label for="signup-confirm">Confirm password</label>
+        <input type="password" id="signup-confirm" placeholder="••••••••" autocomplete="new-password">
+      </div>
+      <button class="auth-btn" id="signup-btn" onclick="signUp()">Create account</button>
+      <div id="signup-error" class="auth-error"></div>
+      <div id="signup-success" class="auth-success"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── APP SHELL ─────────────────────────────────────────── -->
+<div id="app-shell" class="hidden">
   <nav class="sidebar">
     <div>
       <div class="logo"><h1>Career<em>Log</em></h1></div>
@@ -374,11 +354,15 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
       <li><button class="nav-btn active" data-tab="write"><i class="ti ti-edit"></i> Write</button></li>
       <li><button class="nav-btn" data-tab="entries"><i class="ti ti-list"></i> Entries</button></li>
       <li><button class="nav-btn" data-tab="insights"><i class="ti ti-sparkles"></i> Insights</button></li>
-      <li><button class="nav-btn" data-tab="score"><i class="ti ti-award"></i> Score</button></li>
-      <li><button class="nav-btn" data-tab="ladder"><i class="ti ti-stairs"></i> Ladder</button></li>
       <li><button class="nav-btn" data-tab="analytics"><i class="ti ti-chart-bar"></i> Analytics</button></li>
+      <li><button class="nav-btn" data-tab="score"><i class="ti ti-award"></i> Score</button></li>
       <li><button class="nav-btn" data-tab="mood"><i class="ti ti-mood-smile"></i> Mood</button></li>
+      <li><button class="nav-btn" data-tab="ladder"><i class="ti ti-stairs"></i> Ladder</button></li>
     </ul>
+    <div class="user-panel">
+      <div class="user-email mono" id="user-email-display"></div>
+      <button class="signout-btn" onclick="signOut()"><i class="ti ti-logout"></i> Sign out</button>
+    </div>
   </nav>
 
   <main class="main">
@@ -407,7 +391,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
         </div>
         <div class="form-group">
           <label for="entry-content">What happened? <span class="muted">— be specific, include numbers</span></label>
-          <textarea id="entry-content" placeholder="Describe the situation, what you did, and the result. The more detail, the better your insights later."></textarea>
+          <textarea id="entry-content" placeholder="Describe the situation, what you did, and the result."></textarea>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -432,12 +416,10 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
             <input type="text" id="tag-input" placeholder="leadership, product, backend…">
           </div>
         </div>
-        <button class="submit-btn" id="submit-btn">
-          <i class="ti ti-device-floppy"></i> Save entry
-        </button>
+        <button class="submit-btn" id="submit-btn"><i class="ti ti-device-floppy"></i> Save entry</button>
         <div class="loading-row" id="write-loading" style="display:none">
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span class="loading-text">Saving entry…</span>
+          <span class="loading-text">Saving…</span>
         </div>
         <div id="write-result"></div>
       </div>
@@ -445,167 +427,98 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
 
     <!-- ENTRIES -->
     <section id="entries" class="tab-section">
-      <div class="page-header">
-        <h1>All <em>Entries</em></h1>
-        <p class="sans">Your career record, one entry at a time.</p>
-      </div>
-      <div class="loading-row" id="entries-loading" style="display:none">
-        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        <span class="loading-text">Loading entries…</span>
-      </div>
+      <div class="page-header"><h1>All <em>Entries</em></h1><p class="sans">Your career record.</p></div>
+      <div class="loading-row" id="entries-loading" style="display:none"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="loading-text">Loading…</span></div>
       <div class="stats-bar" id="entries-stats" style="display:none"></div>
       <div id="entries-list"></div>
     </section>
 
     <!-- INSIGHTS -->
     <section id="insights" class="tab-section">
-      <div class="page-header">
-        <h1>Career <em>Insights</em></h1>
-        <p class="sans">Claude analyses your entries and builds your professional case.</p>
-      </div>
-      <button class="insights-generate-btn" id="insights-generate-btn" onclick="generateInsights()">
-        <i class="ti ti-sparkles"></i> Generate insights from my entries
-      </button>
-      <div class="loading-row" id="insights-loading" style="display:none">
-        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        <span class="loading-text">Claude is reading your entries and building your career case…</span>
-      </div>
+      <div class="page-header"><h1>Career <em>Insights</em></h1><p class="sans">Claude analyses your entries and builds your professional case.</p></div>
+      <button class="insights-generate-btn" id="insights-generate-btn" onclick="generateInsights()"><i class="ti ti-sparkles"></i> Generate insights from my entries</button>
+      <div class="loading-row" id="insights-loading" style="display:none"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="loading-text">Claude is reading your entries…</span></div>
       <div id="insights-content"></div>
     </section>
 
     <!-- ANALYTICS -->
     <section id="analytics" class="tab-section">
-      <div class="page-header">
-        <h1>Career <em>Analytics</em></h1>
-        <p class="sans">Descriptive patterns across all your entries and mood data.</p>
-      </div>
-      <div class="loading-row" id="analytics-loading" style="display:none">
-        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        <span class="loading-text">Building analytics…</span>
-      </div>
+      <div class="page-header"><h1>Career <em>Analytics</em></h1><p class="sans">Patterns across your entries and mood data.</p></div>
+      <div class="loading-row" id="analytics-loading" style="display:none"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="loading-text">Building analytics…</span></div>
       <div id="analytics-content"></div>
+    </section>
+
+    <!-- SCORE -->
+    <section id="score" class="tab-section">
+      <div class="page-header"><h1>Career <em>Score</em></h1><p class="sans">Your track record, quantified.</p></div>
+      <button class="insights-generate-btn" id="score-calc-btn" onclick="recalculateScore()"><i class="ti ti-refresh"></i> Calculate my score</button>
+      <div class="loading-row" id="score-loading" style="display:none"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="loading-text">Calculating your career score…</span></div>
+      <div id="score-content"></div>
     </section>
 
     <!-- MOOD -->
     <section id="mood" class="tab-section">
-      <div class="page-header">
-        <h1>Weekly <em>Mood</em></h1>
-        <p class="sans">Track your energy, satisfaction and stress each week.</p>
-      </div>
+      <div class="page-header"><h1>Weekly <em>Mood</em></h1><p class="sans">Track energy, satisfaction and stress each week.</p></div>
       <div class="mood-card">
         <span class="mood-section-label">Week of</span>
-        <div class="form-group" style="margin-bottom:20px">
-          <input type="date" id="mood-week" style="max-width:200px">
-        </div>
-        <span class="mood-section-label">How are you feeling this week?</span>
+        <div class="form-group" style="margin-bottom:20px"><input type="date" id="mood-week" style="max-width:200px"></div>
+        <span class="mood-section-label">How are you feeling?</span>
         <div class="slider-group">
-          <div class="slider-row">
-            <div class="slider-icon" style="background:#FAEEDA"><i class="ti ti-bolt" style="color:#854F0B"></i></div>
-            <div class="slider-label">Energy</div>
-            <div class="slider-track"><input type="range" id="slider-energy" min="1" max="5" value="3" step="1"></div>
-            <div class="slider-val" id="val-energy">3</div>
-          </div>
+          <div class="slider-row"><div class="slider-icon" style="background:#FAEEDA"><i class="ti ti-bolt" style="color:#854F0B"></i></div><div class="slider-label">Energy</div><div class="slider-track"><input type="range" id="slider-energy" min="1" max="5" value="3" step="1"></div><div class="slider-val" id="val-energy">3</div></div>
           <div class="slider-desc" id="desc-energy">Steady — getting through the week</div>
         </div>
         <div class="slider-group">
-          <div class="slider-row">
-            <div class="slider-icon" style="background:#EAF3DE"><i class="ti ti-mood-smile" style="color:#3B6D11"></i></div>
-            <div class="slider-label">Satisfaction</div>
-            <div class="slider-track"><input type="range" id="slider-satisfaction" min="1" max="5" value="3" step="1"></div>
-            <div class="slider-val" id="val-satisfaction">3</div>
-          </div>
+          <div class="slider-row"><div class="slider-icon" style="background:#EAF3DE"><i class="ti ti-mood-smile" style="color:#3B6D11"></i></div><div class="slider-label">Satisfaction</div><div class="slider-track"><input type="range" id="slider-satisfaction" min="1" max="5" value="3" step="1"></div><div class="slider-val" id="val-satisfaction">3</div></div>
           <div class="slider-desc" id="desc-satisfaction">Neutral — neither thriving nor struggling</div>
         </div>
         <div class="slider-group">
-          <div class="slider-row">
-            <div class="slider-icon" style="background:#FBEAF0"><i class="ti ti-flame" style="color:#72243E"></i></div>
-            <div class="slider-label">Stress</div>
-            <div class="slider-track"><input type="range" id="slider-stress" min="1" max="5" value="3" step="1"></div>
-            <div class="slider-val" id="val-stress">3</div>
-          </div>
+          <div class="slider-row"><div class="slider-icon" style="background:#FBEAF0"><i class="ti ti-flame" style="color:#72243E"></i></div><div class="slider-label">Stress</div><div class="slider-track"><input type="range" id="slider-stress" min="1" max="5" value="3" step="1"></div><div class="slider-val" id="val-stress">3</div></div>
           <div class="slider-desc" id="desc-stress">Manageable — normal background pressure</div>
         </div>
         <span class="mood-section-label" style="margin-top:4px">Primary emotion</span>
         <div class="emotion-grid">
-          <button class="emotion-btn" data-emotion="motivated" onclick="selectEmotion(this)"><span class="emotion-emoji">🔥</span><span class="emotion-label">Motivated</span></button>
-          <button class="emotion-btn" data-emotion="confident" onclick="selectEmotion(this)"><span class="emotion-emoji">💪</span><span class="emotion-label">Confident</span></button>
-          <button class="emotion-btn" data-emotion="proud" onclick="selectEmotion(this)"><span class="emotion-emoji">⭐</span><span class="emotion-label">Proud</span></button>
-          <button class="emotion-btn" data-emotion="grateful" onclick="selectEmotion(this)"><span class="emotion-emoji">🙏</span><span class="emotion-label">Grateful</span></button>
-          <button class="emotion-btn" data-emotion="calm" onclick="selectEmotion(this)"><span class="emotion-emoji">😌</span><span class="emotion-label">Calm</span></button>
-          <button class="emotion-btn" data-emotion="curious" onclick="selectEmotion(this)"><span class="emotion-emoji">🔍</span><span class="emotion-label">Curious</span></button>
-          <button class="emotion-btn" data-emotion="focused" onclick="selectEmotion(this)"><span class="emotion-emoji">🎯</span><span class="emotion-label">Focused</span></button>
-          <button class="emotion-btn" data-emotion="creative" onclick="selectEmotion(this)"><span class="emotion-emoji">💡</span><span class="emotion-label">Creative</span></button>
-          <button class="emotion-btn" data-emotion="anxious" onclick="selectEmotion(this)"><span class="emotion-emoji">😰</span><span class="emotion-label">Anxious</span></button>
-          <button class="emotion-btn" data-emotion="overwhelmed" onclick="selectEmotion(this)"><span class="emotion-emoji">😵</span><span class="emotion-label">Overwhelmed</span></button>
-          <button class="emotion-btn" data-emotion="frustrated" onclick="selectEmotion(this)"><span class="emotion-emoji">😤</span><span class="emotion-label">Frustrated</span></button>
-          <button class="emotion-btn" data-emotion="bored" onclick="selectEmotion(this)"><span class="emotion-emoji">😑</span><span class="emotion-label">Bored</span></button>
-          <button class="emotion-btn" data-emotion="burnt-out" onclick="selectEmotion(this)"><span class="emotion-emoji">🪫</span><span class="emotion-label">Burnt out</span></button>
-          <button class="emotion-btn" data-emotion="uncertain" onclick="selectEmotion(this)"><span class="emotion-emoji">🤔</span><span class="emotion-label">Uncertain</span></button>
-          <button class="emotion-btn" data-emotion="disconnected" onclick="selectEmotion(this)"><span class="emotion-emoji">🔌</span><span class="emotion-label">Disconnected</span></button>
-          <button class="emotion-btn" data-emotion="undervalued" onclick="selectEmotion(this)"><span class="emotion-emoji">👻</span><span class="emotion-label">Undervalued</span></button>
+          <button class="emotion-btn" data-emotion="motivated"><span class="emotion-emoji">🔥</span><span class="emotion-label">Motivated</span></button>
+          <button class="emotion-btn" data-emotion="confident"><span class="emotion-emoji">💪</span><span class="emotion-label">Confident</span></button>
+          <button class="emotion-btn" data-emotion="proud"><span class="emotion-emoji">⭐</span><span class="emotion-label">Proud</span></button>
+          <button class="emotion-btn" data-emotion="grateful"><span class="emotion-emoji">🙏</span><span class="emotion-label">Grateful</span></button>
+          <button class="emotion-btn" data-emotion="calm"><span class="emotion-emoji">😌</span><span class="emotion-label">Calm</span></button>
+          <button class="emotion-btn" data-emotion="curious"><span class="emotion-emoji">🔍</span><span class="emotion-label">Curious</span></button>
+          <button class="emotion-btn" data-emotion="focused"><span class="emotion-emoji">🎯</span><span class="emotion-label">Focused</span></button>
+          <button class="emotion-btn" data-emotion="creative"><span class="emotion-emoji">💡</span><span class="emotion-label">Creative</span></button>
+          <button class="emotion-btn" data-emotion="anxious"><span class="emotion-emoji">😰</span><span class="emotion-label">Anxious</span></button>
+          <button class="emotion-btn" data-emotion="overwhelmed"><span class="emotion-emoji">😵</span><span class="emotion-label">Overwhelmed</span></button>
+          <button class="emotion-btn" data-emotion="frustrated"><span class="emotion-emoji">😤</span><span class="emotion-label">Frustrated</span></button>
+          <button class="emotion-btn" data-emotion="bored"><span class="emotion-emoji">😑</span><span class="emotion-label">Bored</span></button>
+          <button class="emotion-btn" data-emotion="burnt-out"><span class="emotion-emoji">🪫</span><span class="emotion-label">Burnt out</span></button>
+          <button class="emotion-btn" data-emotion="uncertain"><span class="emotion-emoji">🤔</span><span class="emotion-label">Uncertain</span></button>
+          <button class="emotion-btn" data-emotion="disconnected"><span class="emotion-emoji">🔌</span><span class="emotion-label">Disconnected</span></button>
+          <button class="emotion-btn" data-emotion="undervalued"><span class="emotion-emoji">👻</span><span class="emotion-label">Undervalued</span></button>
         </div>
         <span class="mood-section-label" style="margin-top:20px">Highlights & lowlights</span>
         <div class="form-row" style="margin-bottom:16px">
-          <div class="form-group" style="margin-bottom:0">
-            <label for="mood-highlight">Best thing this week</label>
-            <textarea id="mood-highlight" style="min-height:80px" placeholder="What went well?"></textarea>
-          </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label for="mood-lowlight">Hardest thing this week</label>
-            <textarea id="mood-lowlight" style="min-height:80px" placeholder="What drained you?"></textarea>
-          </div>
+          <div class="form-group" style="margin-bottom:0"><label for="mood-highlight">Best thing this week</label><textarea id="mood-highlight" style="min-height:80px" placeholder="What went well?"></textarea></div>
+          <div class="form-group" style="margin-bottom:0"><label for="mood-lowlight">Hardest thing this week</label><textarea id="mood-lowlight" style="min-height:80px" placeholder="What drained you?"></textarea></div>
         </div>
-        <div class="form-group">
-          <label for="mood-notes">Any other notes</label>
-          <textarea id="mood-notes" style="min-height:70px" placeholder="Anything else worth capturing…"></textarea>
-        </div>
-        <button class="submit-btn" id="mood-submit-btn">
-          <i class="ti ti-device-floppy"></i> Save this week
-        </button>
-        <div class="loading-row" id="mood-loading" style="display:none">
-          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span class="loading-text">Saving mood entry…</span>
-        </div>
+        <div class="form-group"><label for="mood-notes">Notes</label><textarea id="mood-notes" style="min-height:70px" placeholder="Anything else worth capturing…"></textarea></div>
+        <button class="submit-btn" id="mood-submit-btn"><i class="ti ti-device-floppy"></i> Save this week</button>
+        <div class="loading-row" id="mood-loading" style="display:none"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="loading-text">Saving…</span></div>
         <div id="mood-result"></div>
       </div>
       <div style="margin-top:24px">
         <div class="page-header" style="margin-bottom:12px"><h1 style="font-size:18px">Past <em>weeks</em></h1></div>
-        <div class="loading-row" id="mood-history-loading" style="display:none">
-          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span class="loading-text">Loading history…</span>
-        </div>
+        <div class="loading-row" id="mood-history-loading" style="display:none"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="loading-text">Loading…</span></div>
         <div id="mood-history-list"></div>
       </div>
     </section>
 
-  
-    <!-- SCORE -->
-    <section id="score" class="tab-section">
-      <div class="page-header">
-        <h1>Career <em>Score</em></h1>
-        <p class="sans">Your track record, quantified.</p>
-      </div>
-      <div class="loading-row" id="score-loading" style="display:none">
-        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        <span class="loading-text">Calculating your career score…</span>
-      </div>
-      <div id="score-content"></div>
-    </section>
-
-
     <!-- LADDER -->
     <section id="ladder" class="tab-section">
-      <div class="page-header">
-        <h1>Career <em>Ladder</em></h1>
-        <p class="sans">Enter your current role — see your full path up and down the ladder.</p>
-      </div>
+      <div class="page-header"><h1>Career <em>Ladder</em></h1><p class="sans">Enter your current role — see your full path up and down.</p></div>
       <div class="ladder-search">
         <label for="ladder-input">Your current job title</label>
         <div class="ladder-search-row">
-          <input type="text" id="ladder-input" placeholder="e.g. Senior Product Manager, Staff Engineer, Associate Nurse…">
-          <button class="ladder-search-btn" id="ladder-btn">
-            <i class="ti ti-stairs" style="font-style:normal"></i> Build my ladder
-          </button>
+          <input type="text" id="ladder-input" placeholder="e.g. Senior Product Manager, Staff Engineer…">
+          <button class="ladder-search-btn" id="ladder-btn">Build my ladder</button>
         </div>
         <div class="ladder-examples">
           <span class="ladder-example">Junior Software Engineer</span>
@@ -615,44 +528,121 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
           <span class="ladder-example">Staff Nurse</span>
           <span class="ladder-example">Financial Analyst</span>
           <span class="ladder-example">UX Designer</span>
-          <span class="ladder-example">Sales Account Executive</span>
           <span class="ladder-example">Data Scientist</span>
           <span class="ladder-example">Associate Attorney</span>
         </div>
       </div>
-      <div class="loading-row" id="ladder-loading" style="display:none">
-        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        <span class="loading-text">Mapping your career ladder…</span>
-      </div>
+      <div class="loading-row" id="ladder-loading" style="display:none"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="loading-text">Mapping your career ladder…</span></div>
       <div id="ladder-content"></div>
     </section>
 
   </main>
 </div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL      = 'https://vfrfgfqwflpwsiadifcp.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmcmZnZnF3Zmxwd3NpYWRpZmNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDYwNjAsImV4cCI6MjA5NjMyMjA2MH0.mTcEnYUe4N_YYZMhML6cKrKmUkoIZ_zfHAhX4K9KcAo';
-const USER_ID = 'demo_user';
+// ── Supabase client ────────────────────────────────────────
+const SUPABASE_URL = 'https://vfrfgfqwflpwsiadifcp.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmcmZnZnF3Zmxwd3NpYWRpZmNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDYwNjAsImV4cCI6MjA5NjMyMjA2MH0.mTcEnYUe4N_YYZMhML6cKrKmUkoIZ_zfHAhX4K9KcAo';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+let currentUser = null;
+let currentSession = null;
 let selectedCategory = 'win', selectedImpact = 3, selectedEmotion = null, tags = [];
 let chartInstances = {};
 
-const IMPACT_LABELS      = {1:'Minor mention',2:'Noteworthy',3:'Medium impact',4:'High impact',5:'Career-defining'};
-const ENERGY_DESCS       = {1:'Exhausted — running on empty',2:'Low — struggling to focus',3:'Steady — getting through the week',4:'Good — feeling sharp and motivated',5:'Excellent — firing on all cylinders'};
-const SATISFACTION_DESCS = {1:'Very unhappy — something needs to change',2:'Unsatisfied — more bad than good',3:'Neutral — neither thriving nor struggling',4:'Satisfied — feeling good about progress',5:'Very satisfied — this is a great week'};
-const STRESS_DESCS       = {1:'Very calm — barely any pressure',2:'Light — comfortably in control',3:'Manageable — normal background pressure',4:'High — feeling the strain',5:'Overwhelmed — too much at once'};
-const CAT_COLORS         = {win:'#C4654A',metric:'#5B7B8A',feedback:'#8B6BAE',decision:'#6B8F71',lesson:'#C4A46C',challenge:'#A09688'};
-const EMOTION_META       = {
+const IMPACT_LABELS = {1:'Minor mention',2:'Noteworthy',3:'Medium impact',4:'High impact',5:'Career-defining'};
+const ENERGY_DESCS = {1:'Exhausted',2:'Low',3:'Steady — getting through the week',4:'Good — feeling sharp',5:'Excellent — firing on all cylinders'};
+const SATISFACTION_DESCS = {1:'Very unhappy',2:'Unsatisfied',3:'Neutral — neither thriving nor struggling',4:'Satisfied',5:'Very satisfied'};
+const STRESS_DESCS = {1:'Very calm',2:'Light',3:'Manageable — normal background pressure',4:'High — feeling the strain',5:'Overwhelmed'};
+const CAT_COLORS = {win:'#C4654A',metric:'#5B7B8A',feedback:'#8B6BAE',decision:'#6B8F71',lesson:'#C4A46C',challenge:'#A09688'};
+const EMOTION_META = {
   motivated:{emoji:'🔥',valence:'pos'},confident:{emoji:'💪',valence:'pos'},proud:{emoji:'⭐',valence:'pos'},grateful:{emoji:'🙏',valence:'pos'},
   calm:{emoji:'😌',valence:'pos'},curious:{emoji:'🔍',valence:'pos'},focused:{emoji:'🎯',valence:'pos'},creative:{emoji:'💡',valence:'pos'},
   anxious:{emoji:'😰',valence:'neg'},overwhelmed:{emoji:'😵',valence:'neg'},frustrated:{emoji:'😤',valence:'neg'},bored:{emoji:'😑',valence:'neg'},
   'burnt-out':{emoji:'🪫',valence:'neg'},uncertain:{emoji:'🤔',valence:'neu'},disconnected:{emoji:'🔌',valence:'neg'},undervalued:{emoji:'👻',valence:'neg'}
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+// ── Auth ───────────────────────────────────────────────────
+function showTab(tab) {
+  document.getElementById('tab-signin').classList.toggle('active', tab === 'signin');
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('form-signin').classList.toggle('hidden', tab !== 'signin');
+  document.getElementById('form-signup').classList.toggle('hidden', tab !== 'signup');
+}
+
+async function signIn() {
+  const email = document.getElementById('signin-email').value.trim();
+  const password = document.getElementById('signin-password').value;
+  const btn = document.getElementById('signin-btn');
+  const errEl = document.getElementById('signin-error');
+  errEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    errEl.textContent = error.message;
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+}
+
+async function signUp() {
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const confirm = document.getElementById('signup-confirm').value;
+  const btn = document.getElementById('signup-btn');
+  const errEl = document.getElementById('signup-error');
+  const successEl = document.getElementById('signup-success');
+  errEl.style.display = 'none'; successEl.style.display = 'none';
+  if (password !== confirm) { errEl.textContent = 'Passwords do not match'; errEl.style.display = 'block'; return; }
+  if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters'; errEl.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  const { error } = await sb.auth.signUp({ email, password });
+  if (error) {
+    errEl.textContent = error.message; errEl.style.display = 'block';
+  } else {
+    successEl.textContent = 'Account created! Check your email to confirm, then sign in.';
+    successEl.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Create account';
+}
+
+async function signInWithGoogle() {
+  await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  currentUser = null; currentSession = null;
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('app-shell').classList.add('hidden');
+}
+
+// Watch auth state
+sb.auth.onAuthStateChange((event, session) => {
+  currentSession = session;
+  currentUser = session?.user || null;
+  if (currentUser) {
+    document.getElementById('auth-screen').classList.add('hidden');
+    document.getElementById('app-shell').classList.remove('hidden');
+    document.getElementById('user-email-display').textContent = currentUser.email;
+    initApp();
+  } else {
+    document.getElementById('auth-screen').classList.remove('hidden');
+    document.getElementById('app-shell').classList.add('hidden');
+  }
+});
+
+// ── App init ───────────────────────────────────────────────
+function initApp() {
   document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+  bindNav(); bindCats(); bindImpact(); bindTags(); bindMoodSliders(); bindMoodEmotions(); bindLadder();
+  document.getElementById('submit-btn').addEventListener('click', submitEntry);
+  document.getElementById('mood-submit-btn').addEventListener('click', submitMood);
+}
+
+function bindNav() {
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.tab;
@@ -660,19 +650,24 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById(tab).classList.add('active');
-      if (tab === 'entries')   loadEntries();
+      if (tab === 'entries') loadEntries();
       if (tab === 'analytics') loadAnalytics();
+      if (tab === 'mood') loadMoodHistory();
       if (tab === 'score') loadScore();
-      if (tab === 'ladder') { /* ladder ready */ }
-      if (tab === 'mood')      { initMoodSliders(); loadMoodHistory(); }
     });
   });
+}
+
+function bindCats() {
   document.querySelectorAll('.cat-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected'); selectedCategory = btn.dataset.cat;
     });
   });
+}
+
+function bindImpact() {
   document.querySelectorAll('.impact-dot').forEach(dot => {
     dot.addEventListener('click', () => {
       selectedImpact = parseInt(dot.dataset.val);
@@ -681,48 +676,73 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('impact-label').textContent = IMPACT_LABELS[selectedImpact];
     });
   });
+}
+
+function bindTags() {
   const container = document.getElementById('tags-container');
-  const tagInput  = document.getElementById('tag-input');
-  container.addEventListener('click', () => tagInput.focus());
-  tagInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); const val = tagInput.value.trim().toLowerCase().replace(/,/g,''); if (val && !tags.includes(val)) { tags.push(val); renderTags(); } tagInput.value = ''; }
-    if (e.key === 'Backspace' && tagInput.value === '' && tags.length) { tags.pop(); renderTags(); }
+  const inp = document.getElementById('tag-input');
+  container.addEventListener('click', () => inp.focus());
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = inp.value.trim().toLowerCase().replace(/,/g,'');
+      if (val && !tags.includes(val)) { tags.push(val); renderTags(); }
+      inp.value = '';
+    }
+    if (e.key === 'Backspace' && inp.value === '' && tags.length) { tags.pop(); renderTags(); }
   });
-  document.getElementById('submit-btn').addEventListener('click', submitEntry);
-});
+}
 
 function renderTags() {
   const container = document.getElementById('tags-container'), inp = document.getElementById('tag-input');
   container.innerHTML = '';
-  tags.forEach(tag => { const pill = document.createElement('span'); pill.className = 'tag-pill'; pill.innerHTML = tag + '<button onclick="removeTag(\'' + tag + '\')">×</button>'; container.appendChild(pill); });
+  tags.forEach(tag => {
+    const pill = document.createElement('span'); pill.className = 'tag-pill';
+    pill.innerHTML = tag + '<button onclick="removeTag(\'' + tag + '\')">×</button>';
+    container.appendChild(pill);
+  });
   container.appendChild(inp); inp.focus();
 }
 function removeTag(tag) { tags = tags.filter(t => t !== tag); renderTags(); }
 
+// ── Auth header helper ─────────────────────────────────────
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (currentSession?.access_token || '') };
+}
+
+// ── Supabase fetch with user JWT ───────────────────────────
 async function sbFetch(path, options = {}) {
+  const token = currentSession?.access_token || '';
   const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
     ...options,
-    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation', ...(options.headers || {}) },
+    headers: {
+      'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation',
+      ...(options.headers || {}),
+    },
   });
   if (!res.ok) throw new Error('Supabase error: ' + await res.text());
   const text = await res.text(); return text ? JSON.parse(text) : [];
 }
 
+// ── Submit entry ───────────────────────────────────────────
 async function submitEntry() {
   const title = document.getElementById('entry-title').value.trim();
   const content = document.getElementById('entry-content').value.trim();
   const date = document.getElementById('entry-date').value;
   if (!title) return showToast('Please add a title');
   if (!content) return showToast('Please add some content');
-  if (!date) return showToast('Please select a date');
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
   document.getElementById('write-loading').style.display = 'flex';
   document.getElementById('write-result').innerHTML = '';
   try {
-    await sbFetch('journal_entries', { method: 'POST', body: JSON.stringify({ user_id: USER_ID, category: selectedCategory, title, content, impact_level: selectedImpact, tags, entry_date: date }) });
+    await sbFetch('journal_entries', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: currentUser.id, category: selectedCategory, title, content, impact_level: selectedImpact, tags, entry_date: date }),
+    });
     document.getElementById('write-loading').style.display = 'none';
-    document.getElementById('write-result').innerHTML = '<div class="success-banner">✓ Entry saved. Go to <strong>Insights</strong> to get your AI summary.</div>';
+    document.getElementById('write-result').innerHTML = '<div class="success-banner">✓ Entry saved. Go to Insights to get your AI summary.</div>';
     document.getElementById('entry-title').value = '';
     document.getElementById('entry-content').value = '';
     document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
@@ -735,12 +755,13 @@ async function submitEntry() {
   btn.disabled = false;
 }
 
+// ── Load entries ───────────────────────────────────────────
 async function loadEntries() {
   const listEl = document.getElementById('entries-list'), statsEl = document.getElementById('entries-stats');
   statsEl.style.display = 'none'; listEl.innerHTML = '';
   document.getElementById('entries-loading').style.display = 'flex';
   try {
-    const entries = await sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.desc&limit=100');
+    const entries = await sbFetch('journal_entries?user_id=eq.' + currentUser.id + '&order=entry_date.desc&limit=100');
     document.getElementById('entries-loading').style.display = 'none';
     if (!entries || entries.length === 0) { listEl.innerHTML = '<div class="empty-state"><i class="ti ti-notebook"></i>No entries yet.</div>'; return; }
     const avg = entries.reduce((s,e)=>s+(e.impact_level||0),0)/entries.length;
@@ -751,149 +772,144 @@ async function loadEntries() {
     entries.forEach(e => {
       const snippet = e.content.length>160?e.content.slice(0,160)+'…':e.content;
       const tagLine = e.tags&&e.tags.length?' · '+e.tags.join(', '):'';
-      const card = document.createElement('div'); card.className = 'entry-card'; card.dataset.cat = e.category;
-      card.innerHTML = '<div class="entry-top"><div class="entry-title">'+e.title+'</div><span class="badge badge-'+e.category+'">'+e.category+'</span></div><div class="entry-snippet sans">'+snippet+'</div><div class="entry-meta">'+e.entry_date+' · Impact '+e.impact_level+'/5'+tagLine+'</div>';
+      const card = document.createElement('div'); card.className='entry-card'; card.dataset.cat=e.category;
+      card.innerHTML='<div class="entry-top"><div class="entry-title">'+e.title+'</div><span class="badge badge-'+e.category+'">'+e.category+'</span></div><div class="entry-snippet sans">'+snippet+'</div><div class="entry-meta">'+e.entry_date+' · Impact '+e.impact_level+'/5'+tagLine+'</div>';
       listEl.appendChild(card);
     });
-  } catch(err) { document.getElementById('entries-loading').style.display = 'none'; listEl.innerHTML = '<div class="empty-state">Error: '+err.message+'</div>'; }
+  } catch(err) { document.getElementById('entries-loading').style.display='none'; listEl.innerHTML='<div class="empty-state">Error: '+err.message+'</div>'; }
 }
 
-// ── Insights — AI summaries via server ───────────────────
+// ── Insights ───────────────────────────────────────────────
 async function generateInsights() {
   const btn = document.getElementById('insights-generate-btn');
   const el  = document.getElementById('insights-content');
-  btn.disabled = true;
+  btn.disabled = true; el.innerHTML = '';
   document.getElementById('insights-loading').style.display = 'flex';
-  el.innerHTML = '';
   try {
-    const entries = await sbFetch('journal_entries?user_id=eq.' + USER_ID + '&order=entry_date.desc&limit=50');
-    if (!entries || entries.length === 0) {
-      document.getElementById('insights-loading').style.display = 'none';
-      el.innerHTML = '<div class="empty-state"><i class="ti ti-notebook"></i>Write at least one entry first.</div>';
-      btn.disabled = false; return;
-    }
-    const res = await fetch('/api/insights', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entries }),
-    });
-    if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Server error'); }
+    const entries = await sbFetch('journal_entries?user_id=eq.' + currentUser.id + '&order=entry_date.desc&limit=50');
+    if (!entries || entries.length === 0) { document.getElementById('insights-loading').style.display='none'; el.innerHTML='<div class="empty-state"><i class="ti ti-notebook"></i>Write at least one entry first.</div>'; btn.disabled=false; return; }
+    const res = await fetch('/api/insights', { method:'POST', headers: authHeaders(), body: JSON.stringify({ entries }) });
+    if (!res.ok) throw new Error((await res.json()).error || 'Server error');
     const data = await res.json();
-    document.getElementById('insights-loading').style.display = 'none';
-    renderInsights(data, entries.length);
-  } catch(err) {
-    document.getElementById('insights-loading').style.display = 'none';
-    el.innerHTML = '<div class="error-banner">Error: ' + err.message + '</div>';
-    console.error(err);
-  }
+    document.getElementById('insights-loading').style.display='none';
+    const winsHtml = (data.key_wins||[]).map(w=>'<li>'+w+'</li>').join('');
+    const skillsHtml = (data.top_skills||[]).map(s=>'<span class="skill-pill">'+s+'</span>').join('');
+    const starsHtml = (data.star_stories||[]).map(s=>'<div class="star-card"><div class="star-card-title">'+s.title+'</div><div class="star-row"><div class="star-key">Situation</div><div class="star-val">'+s.situation+'</div></div><div class="star-row"><div class="star-key">Task</div><div class="star-val">'+s.task+'</div></div><div class="star-row"><div class="star-key">Action</div><div class="star-val">'+s.action+'</div></div><div class="star-row"><div class="star-key">Result</div><div class="star-val">'+s.result+'</div></div></div>').join('');
+    el.innerHTML='<p class="insights-meta">'+entries.length+' entries analysed · '+new Date().toLocaleDateString('en',{month:'long',day:'numeric',year:'numeric'})+'</p>'+
+      '<div class="insight-block accent"><div class="insight-block-label">Career summary</div><div class="insight-block-body">'+data.career_summary+'</div></div>'+
+      '<div class="insight-block"><div class="insight-block-label">Key wins</div><ul class="win-list">'+winsHtml+'</ul></div>'+
+      '<div class="insight-block"><div class="insight-block-label">Top skills</div><div class="skill-pills" style="margin-top:4px">'+skillsHtml+'</div></div>'+
+      '<div class="insight-block"><div class="insight-block-label">Promotion case</div><div class="insight-block-body">'+data.promotion_case+'</div></div>'+
+      (starsHtml?'<div class="insight-block"><div class="insight-block-label">Interview stories — STAR</div>'+starsHtml+'</div>':'')+
+      (data.linkedin_update?'<div class="insight-block"><div class="insight-block-label">LinkedIn update draft</div><div class="linkedin-box">'+data.linkedin_update+'</div><button class="copy-btn" onclick="navigator.clipboard.writeText(document.querySelector(\'.linkedin-box\').textContent).then(()=>showToast(\'Copied!\'))"><i class="ti ti-copy"></i> Copy</button></div>':'')+
+      '<div class="insight-block"><div class="insight-block-label">Pattern to notice</div><div class="insight-block-body">'+data.growth_areas+'</div></div>'+
+      '<div class="insight-block accent"><div class="insight-block-label">Next 30 days</div><div class="insight-block-body" style="font-style:italic">'+data.next_focus+'</div></div>';
+  } catch(err) { document.getElementById('insights-loading').style.display='none'; el.innerHTML='<div class="error-banner">Error: '+err.message+'</div>'; }
   btn.disabled = false;
 }
 
-function renderInsights(d, entryCount) {
-  const el = document.getElementById('insights-content');
-  const winsHtml = (d.key_wins||[]).map(w=>'<li>'+w+'</li>').join('');
-  const skillsHtml = (d.top_skills||[]).map(s=>'<span class="skill-pill">'+s+'</span>').join('');
-  const starsHtml = (d.star_stories||[]).map(s=>`
-    <div class="star-card">
-      <div class="star-card-title">${s.title}</div>
-      <div class="star-row"><div class="star-key">Situation</div><div class="star-val">${s.situation}</div></div>
-      <div class="star-row"><div class="star-key">Task</div><div class="star-val">${s.task}</div></div>
-      <div class="star-row"><div class="star-key">Action</div><div class="star-val">${s.action}</div></div>
-      <div class="star-row"><div class="star-key">Result</div><div class="star-val">${s.result}</div></div>
-    </div>`).join('');
-
-  el.innerHTML = `
-    <p class="insights-meta">${entryCount} entries analysed · Generated ${new Date().toLocaleDateString('en',{month:'long',day:'numeric',year:'numeric'})}</p>
-
-    <div class="insight-block accent">
-      <div class="insight-block-label">Career summary</div>
-      <div class="insight-block-body">${d.career_summary||''}</div>
-    </div>
-
-    <div class="insight-block">
-      <div class="insight-block-label">Key wins</div>
-      <ul class="win-list">${winsHtml}</ul>
-    </div>
-
-    <div class="insight-block">
-      <div class="insight-block-label">Top skills demonstrated</div>
-      <div class="skill-pills" style="margin-top:4px">${skillsHtml}</div>
-    </div>
-
-    <div class="insight-block">
-      <div class="insight-block-label">Promotion case</div>
-      <div class="insight-block-body">${d.promotion_case||''}</div>
-    </div>
-
-    ${starsHtml ? `<div class="insight-block">
-      <div class="insight-block-label">Interview stories — STAR format</div>
-      ${starsHtml}
-    </div>` : ''}
-
-    ${d.linkedin_update ? `<div class="insight-block">
-      <div class="insight-block-label">LinkedIn update draft</div>
-      <div class="linkedin-box">${d.linkedin_update}</div>
-      <button class="copy-btn" onclick="copyLinkedIn()"><i class="ti ti-copy"></i> Copy to clipboard</button>
-    </div>` : ''}
-
-    <div class="insight-block">
-      <div class="insight-block-label">Pattern to notice</div>
-      <div class="insight-block-body">${d.growth_areas||''}</div>
-    </div>
-
-    <div class="insight-block accent">
-      <div class="insight-block-label">Next 30 days</div>
-      <div class="insight-block-body" style="font-style:italic">${d.next_focus||''}</div>
-    </div>`;
+// ── Score ──────────────────────────────────────────────────
+async function loadScore() {
+  const el = document.getElementById('score-content');
+  el.innerHTML = ''; document.getElementById('score-loading').style.display = 'flex';
+  try {
+    const res = await fetch('/api/score/load', { headers: authHeaders() });
+    const saved = res.ok ? await res.json() : null;
+    document.getElementById('score-loading').style.display = 'none';
+    if (saved && saved.score) {
+      renderScore({ score: saved.score, entryBonus: saved.entry_bonus, entriesCount: saved.entries_count,
+        tier: { label: saved.tier_label, grade: saved.tier_grade, color: saved.tier_color },
+        breakdown: {
+          consistency:   { contribution: saved.consistency_pts, raw: saved.consistency_raw, weight: 0.25 },
+          impactQuality: { contribution: saved.impact_pts,      raw: saved.impact_raw,      weight: 0.25 },
+          categoryMix:   { contribution: saved.category_pts,    raw: saved.category_raw,    weight: 0.20 },
+          selfAwareness: { contribution: saved.awareness_pts,   raw: saved.awareness_raw,   weight: 0.15 },
+          entryDepth:    { contribution: saved.depth_pts,       raw: saved.depth_raw,       weight: 0.15 },
+        }}, saved.entries_count || 0, saved.updated_at);
+    } else {
+      el.innerHTML = '<div class="empty-state"><i class="ti ti-award"></i>No score yet — click <strong>Calculate my score</strong> above.</div>';
+    }
+  } catch(err) { document.getElementById('score-loading').style.display='none'; el.innerHTML='<div class="empty-state"><i class="ti ti-award"></i>Click <strong>Calculate my score</strong> above.</div>'; }
 }
 
-function copyLinkedIn() {
-  const text = document.querySelector('.linkedin-box').textContent;
-  navigator.clipboard.writeText(text).then(()=>showToast('Copied to clipboard!'));
+async function recalculateScore() {
+  const btn = document.getElementById('score-calc-btn'), el = document.getElementById('score-content');
+  btn.disabled = true; el.innerHTML = ''; document.getElementById('score-loading').style.display = 'flex';
+  try {
+    const entries = await sbFetch('journal_entries?user_id=eq.' + currentUser.id + '&order=entry_date.asc&limit=500');
+    const moodRows = await sbFetch('weekly_mood?user_id=eq.' + currentUser.id + '&order=week_of.asc&limit=200');
+    if (!entries || entries.length === 0) { document.getElementById('score-loading').style.display='none'; el.innerHTML='<div class="empty-state"><i class="ti ti-award"></i>Write at least one entry first.</div>'; btn.disabled=false; return; }
+    el.innerHTML = '<div style="font-family:-apple-system,sans-serif;font-size:13px;color:#8A8178;padding:8px 0">Found '+entries.length+' entries · calculating…</div>';
+    const res = await fetch('/api/score', { method:'POST', headers: authHeaders(), body: JSON.stringify({ entries, moodRows }) });
+    if (!res.ok) { const e=await res.json(); throw new Error(e.error||'Server error '+res.status); }
+    const data = await res.json();
+    document.getElementById('score-loading').style.display = 'none';
+    if (!data || !data.score) throw new Error('No score returned');
+    renderScore(data, entries.length, new Date().toISOString());
+    showToast('Score calculated and saved!');
+  } catch(err) { document.getElementById('score-loading').style.display='none'; el.innerHTML='<div class="error-banner">Error: '+err.message+'</div>'; }
+  btn.disabled = false;
 }
 
-// ── Analytics ─────────────────────────────────────────────
+function renderScore(data, entryCount, calculatedAt) {
+  const el = document.getElementById('score-content');
+  const score = data.score, tier = data.tier, bd = data.breakdown;
+  const pct = Math.round((score/1000)*100);
+  const PILLAR_LABELS = {
+    consistency:   {label:'Consistency',    icon:'ti-calendar-stats', desc:'How regularly you log entries'},
+    impactQuality: {label:'Impact quality', icon:'ti-trophy',         desc:'Quality and impact level of your entries'},
+    categoryMix:   {label:'Category mix',   icon:'ti-chart-pie',      desc:'Variety across entry types'},
+    selfAwareness: {label:'Self-awareness', icon:'ti-mood-smile',     desc:'Weekly mood and emotion tracking'},
+    entryDepth:    {label:'Entry depth',    icon:'ti-pencil',         desc:'Detail, word count and tags per entry'},
+  };
+  const sortedPillars = Object.entries(bd).sort((a,b)=>a[1].contribution-b[1].contribution);
+  const weakest = sortedPillars[0][0];
+  const TIPS = {
+    consistency:   ['Log at least 3 entries per week','Build a streak — consistency is worth 25% of your score','Avoid gaps longer than a week'],
+    impactQuality: ['Aim for impact level 4–5 entries','Always include a number or metric','Focus on outcomes, not just activities'],
+    categoryMix:   ['Use all 6 categories for the highest mix score','Log feedback and lessons — they get extra points','Avoid logging only one type of entry'],
+    selfAwareness: ['Log your weekly mood every Monday','Always select a primary emotion','Fill in both the highlight and lowlight fields'],
+    entryDepth:    ['Write at least 100 words per entry','Add 3+ tags to every entry','Short entries under 30 words lose points'],
+  };
+  const pillarsHtml = Object.entries(PILLAR_LABELS).map(([key,meta]) => {
+    const contrib = bd[key]?bd[key].contribution:0;
+    const maxC = 1000*(bd[key]?bd[key].weight:0.2);
+    const pp = maxC>0?Math.round((contrib/maxC)*100):0;
+    return '<div class="pillar-card"><div class="pillar-head"><div class="pillar-name"><i class="ti '+meta.icon+'" style="font-size:14px;vertical-align:-2px;margin-right:6px"></i>'+meta.label+'</div><div class="pillar-pts">+'+contrib+' pts</div></div><div class="pillar-bar-track"><div class="pillar-bar-fill" style="width:'+pp+'%"></div></div><div class="pillar-desc">'+meta.desc+'</div></div>';
+  }).join('');
+  const tipsHtml = (TIPS[weakest]||[]).map(t=>'<div class="tip-row"><i class="ti ti-arrow-up-right tip-icon"></i>'+t+'</div>').join('');
+  el.innerHTML='<div class="score-hero"><div class="score-number" style="color:'+(tier?tier.color:'#C4654A')+'">'+score+'</div><div class="score-grade" style="color:'+(tier?tier.color:'#C4654A')+'">'+(tier?tier.grade:'—')+'</div><div class="score-tier">'+(tier?tier.label:'')+'· based on '+entryCount+' entries'+(calculatedAt?' · '+new Date(calculatedAt).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'}):'')+'</div><div class="score-gauge"><div class="gauge-track"><div class="gauge-fill" style="width:'+pct+'%;background:'+(tier?tier.color:'#C4654A')+'"></div></div><div class="gauge-labels"><span>0</span><span>200</span><span>400</span><span>600</span><span>800</span><span>1000</span></div></div></div>'+
+    '<div style="margin-bottom:12px"><div class="page-header" style="margin-bottom:12px"><h1 style="font-size:18px">Score <em>breakdown</em></h1></div><div class="pillars-grid">'+pillarsHtml+'</div></div>'+
+    '<div class="score-tips"><div class="page-header" style="margin-bottom:10px"><h1 style="font-size:16px">How to <em>improve</em></h1></div><p style="font-size:12px;color:#A09688;font-family:-apple-system,sans-serif;margin-bottom:10px">Your lowest pillar is <strong style="color:#C4654A">'+PILLAR_LABELS[weakest].label+'</strong> — focus here for the biggest score jump.</p>'+tipsHtml+'</div>';
+}
+
+// ── Analytics ──────────────────────────────────────────────
 async function loadAnalytics() {
   const el = document.getElementById('analytics-content');
   el.innerHTML = ''; document.getElementById('analytics-loading').style.display = 'flex';
   try {
     const [entries, moodRows] = await Promise.all([
-      sbFetch('journal_entries?user_id=eq.'+USER_ID+'&order=entry_date.asc&limit=500'),
-      sbFetch('weekly_mood?user_id=eq.'+USER_ID+'&order=week_of.asc&limit=200'),
+      sbFetch('journal_entries?user_id=eq.'+currentUser.id+'&order=entry_date.asc&limit=500'),
+      sbFetch('weekly_mood?user_id=eq.'+currentUser.id+'&order=week_of.asc&limit=200'),
     ]);
     document.getElementById('analytics-loading').style.display = 'none';
     if (!entries||entries.length===0){el.innerHTML='<div class="empty-state"><i class="ti ti-chart-bar"></i>No entries yet.</div>';return;}
-    el.innerHTML=`<div class="charts-grid">
-      <div class="chart-card"><div class="chart-title">Distribution</div><div class="chart-subtitle">Entries by category</div><div class="chart-wrap"><canvas id="chart-category"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Impact</div><div class="chart-subtitle">How impactful are your entries?</div><div id="impact-bars" style="margin-top:16px"></div></div>
-      <div class="chart-card full"><div class="chart-title">Activity</div><div class="chart-subtitle">Entries logged per week</div><div class="chart-wrap tall"><canvas id="chart-timeline"></canvas></div></div>
-      <div class="chart-card full"><div class="chart-title">Composition</div><div class="chart-subtitle">Category mix over time</div><div class="chart-wrap tall"><canvas id="chart-stacked"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Tags</div><div class="chart-subtitle">Most used tags</div><div id="top-tags-content" style="margin-top:8px"></div></div>
-      <div class="chart-card"><div class="chart-title">Impact by category</div><div class="chart-subtitle">Average impact score per type</div><div class="chart-wrap"><canvas id="chart-impact-cat"></canvas></div></div>
-      <div class="chart-card full"><div class="chart-title">Emotion frequency</div><div class="chart-subtitle">How often each emotion appears in your weekly mood log</div><div id="emotion-freq" style="margin-top:8px"></div></div>
-      <div class="chart-card full"><div class="chart-title">Mood over time</div><div class="chart-subtitle">Energy, satisfaction and stress week by week</div><div class="chart-wrap tall"><canvas id="chart-mood-timeline"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Emotional balance</div><div class="chart-subtitle">Positive vs negative weeks</div><div class="chart-wrap"><canvas id="chart-valence"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Avg mood by metric</div><div class="chart-subtitle">Mean score across all weeks</div><div id="mood-avg-bars" style="margin-top:16px"></div></div>
-    </div>`;
-    buildCategoryDonut(entries); buildImpactBars(entries); buildTimeline(entries); buildStacked(entries); buildTopTags(entries); buildImpactByCategory(entries);
-    buildEmotionFrequency(moodRows); buildMoodTimeline(moodRows); buildValenceDonut(moodRows); buildMoodAvgBars(moodRows);
-  } catch(err){ document.getElementById('analytics-loading').style.display='none'; el.innerHTML='<div class="empty-state">Error: '+err.message+'</div>'; }
+    el.innerHTML='<div class="charts-grid"><div class="chart-card"><div class="chart-title">Distribution</div><div class="chart-subtitle">Entries by category</div><div class="chart-wrap"><canvas id="chart-category"></canvas></div></div><div class="chart-card"><div class="chart-title">Impact</div><div class="chart-subtitle">How impactful are your entries?</div><div id="impact-bars" style="margin-top:16px"></div></div><div class="chart-card full"><div class="chart-title">Activity</div><div class="chart-subtitle">Entries logged per week</div><div class="chart-wrap tall"><canvas id="chart-timeline"></canvas></div></div><div class="chart-card"><div class="chart-title">Tags</div><div class="chart-subtitle">Most used tags</div><div id="top-tags-content" style="margin-top:8px"></div></div><div class="chart-card"><div class="chart-title">Avg impact by category</div><div class="chart-subtitle">Mean impact score per type</div><div class="chart-wrap"><canvas id="chart-impact-cat"></canvas></div></div><div class="chart-card full"><div class="chart-title">Emotion frequency</div><div class="chart-subtitle">How often each emotion appears</div><div id="emotion-freq" style="margin-top:8px"></div></div><div class="chart-card full"><div class="chart-title">Mood over time</div><div class="chart-subtitle">Energy, satisfaction and stress week by week</div><div class="chart-wrap tall"><canvas id="chart-mood-timeline"></canvas></div></div></div>';
+    buildCategoryDonut(entries); buildImpactBars(entries); buildTimeline(entries); buildTopTags(entries); buildImpactByCategory(entries); buildEmotionFrequency(moodRows); buildMoodTimeline(moodRows);
+  } catch(err){document.getElementById('analytics-loading').style.display='none';el.innerHTML='<div class="empty-state">Error: '+err.message+'</div>';}
 }
 
 function destroyChart(id){if(chartInstances[id]){chartInstances[id].destroy();delete chartInstances[id];}}
 function buildCategoryDonut(e){destroyChart('category');const c={};e.forEach(x=>{c[x.category]=(c[x.category]||0)+1;});const l=Object.keys(c);chartInstances['category']=new Chart(document.getElementById('chart-category').getContext('2d'),{type:'doughnut',data:{labels:l,datasets:[{data:l.map(x=>c[x]),backgroundColor:l.map(x=>CAT_COLORS[x]),borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},color:'#6B6560',boxWidth:12}}}}});}
 function buildImpactBars(entries){const c={1:0,2:0,3:0,4:0,5:0};entries.forEach(e=>{if(e.impact_level)c[e.impact_level]++;});const max=Math.max(...Object.values(c),1);let h='';for(let i=5;i>=1;i--){h+='<div class="impact-bar-row"><div class="impact-bar-label">'+i+'</div><div class="impact-bar-track"><div class="impact-bar-fill" style="width:'+Math.round(c[i]/max*100)+'%"></div></div><div class="impact-bar-count">'+c[i]+'</div></div>';}document.getElementById('impact-bars').innerHTML=h;}
 function buildTimeline(entries){destroyChart('timeline');const w={};entries.forEach(e=>{const d=new Date(e.entry_date);const m=new Date(d);m.setDate(d.getDate()-((d.getDay()+6)%7));const k=m.toISOString().split('T')[0];w[k]=(w[k]||0)+1;});const s=Object.keys(w).sort();chartInstances['timeline']=new Chart(document.getElementById('chart-timeline').getContext('2d'),{type:'line',data:{labels:s.map(d=>new Date(d).toLocaleDateString('en',{month:'short',day:'numeric'})),datasets:[{label:'Entries',data:s.map(k=>w[k]),borderColor:'#C4654A',backgroundColor:'rgba(196,101,74,0.08)',fill:true,tension:0.4,pointBackgroundColor:'#C4654A',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10}}},y:{grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10},stepSize:1},beginAtZero:true}}}});}
-function buildStacked(entries){destroyChart('stacked');const CATS=['win','metric','feedback','decision','lesson','challenge'];const m={};entries.forEach(e=>{const k=new Date(e.entry_date).toLocaleDateString('en',{month:'short',year:'2-digit'});if(!m[k])m[k]={};m[k][e.category]=(m[k][e.category]||0)+1;});const l=Object.keys(m);chartInstances['stacked']=new Chart(document.getElementById('chart-stacked').getContext('2d'),{type:'bar',data:{labels:l,datasets:CATS.map(c=>({label:c,data:l.map(k=>m[k][c]||0),backgroundColor:CAT_COLORS[c],borderRadius:2}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},color:'#6B6560',boxWidth:10}}},scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#A09688',font:{size:10}}},y:{stacked:true,grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10},stepSize:1},beginAtZero:true}}}});}
-function buildTopTags(entries){const t={};entries.forEach(e=>{(e.tags||[]).forEach(x=>{t[x]=(t[x]||0)+1;});});const s=Object.entries(t).sort((a,b)=>b[1]-a[1]).slice(0,12);const el=document.getElementById('top-tags-content');el.innerHTML=s.length?'<div class="top-tags">'+s.map(([t,c])=>'<span class="top-tag">'+t+'<span class="top-tag-count">'+c+'</span></span>').join('')+'</div>':'<p style="font-size:13px;color:#A09688">No tags yet.</p>';}
+function buildTopTags(entries){const t={};entries.forEach(e=>{(e.tags||[]).forEach(x=>{t[x]=(t[x]||0)+1;});});const s=Object.entries(t).sort((a,b)=>b[1]-a[1]).slice(0,12);document.getElementById('top-tags-content').innerHTML=s.length?'<div class="top-tags">'+s.map(([t,c])=>'<span class="top-tag">'+t+'<span class="top-tag-count">'+c+'</span></span>').join('')+'</div>':'<p style="font-size:13px;color:#A09688">No tags yet.</p>';}
 function buildImpactByCategory(entries){destroyChart('impact-cat');const CATS=['win','metric','feedback','decision','lesson','challenge'];const s={},c={};entries.forEach(e=>{if(!e.impact_level)return;s[e.category]=(s[e.category]||0)+e.impact_level;c[e.category]=(c[e.category]||0)+1;});chartInstances['impact-cat']=new Chart(document.getElementById('chart-impact-cat').getContext('2d'),{type:'bar',data:{labels:CATS,datasets:[{data:CATS.map(x=>c[x]?+(s[x]/c[x]).toFixed(2):0),backgroundColor:CATS.map(x=>CAT_COLORS[x]),borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#A09688',font:{size:10}}},y:{min:0,max:5,grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10},stepSize:1}}}}});}
-function buildEmotionFrequency(moodRows){const el=document.getElementById('emotion-freq');if(!moodRows||moodRows.length===0){el.innerHTML='<p style="font-size:13px;color:#A09688;padding:8px 0">No mood entries yet.</p>';return;}const c={};moodRows.forEach(r=>{if(r.primary_emotion)c[r.primary_emotion]=(c[r.primary_emotion]||0)+1;});if(!Object.keys(c).length){el.innerHTML='<p style="font-size:13px;color:#A09688;padding:8px 0">No emotions logged yet.</p>';return;}const sorted=Object.entries(c).sort((a,b)=>b[1]-a[1]);const max=sorted[0][1];const VC={pos:'#6B8F71',neg:'#C4654A',neu:'#C4A46C'};let h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">';sorted.forEach(([em,cnt])=>{const meta=EMOTION_META[em]||{emoji:'?',valence:'neu'};h+='<div class="emotion-freq-row"><div class="emotion-freq-emoji">'+meta.emoji+'</div><div class="emotion-freq-label">'+em+'</div><div class="emotion-freq-track"><div class="emotion-freq-fill" style="width:'+Math.round(cnt/max*100)+'%;background:'+VC[meta.valence]+'"></div></div><div class="emotion-freq-count">'+cnt+'</div></div>';});h+='</div>';const pos=moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='pos').length;const neg=moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='neg').length;const neu=moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='neu').length;const tot=pos+neg+neu;if(tot>0)h+='<div style="display:flex;gap:16px;margin-top:16px;padding-top:12px;border-top:1px solid #EDE8E0"><div class="sans" style="font-size:12px"><span style="color:#6B8F71;font-weight:600">'+Math.round(pos/tot*100)+'%</span> <span style="color:#A09688">positive</span></div><div class="sans" style="font-size:12px"><span style="color:#C4654A;font-weight:600">'+Math.round(neg/tot*100)+'%</span> <span style="color:#A09688">challenging</span></div><div class="sans" style="font-size:12px"><span style="color:#C4A46C;font-weight:600">'+Math.round(neu/tot*100)+'%</span> <span style="color:#A09688">neutral</span></div></div>';el.innerHTML=h;}
-function buildMoodTimeline(moodRows){destroyChart('mood-timeline');const ctx=document.getElementById('chart-mood-timeline');if(!moodRows||moodRows.length===0){ctx.parentElement.innerHTML='<p style="font-size:13px;color:#A09688;padding:20px 0">No mood data yet.</p>';return;}const s=[...moodRows].sort((a,b)=>a.week_of.localeCompare(b.week_of));chartInstances['mood-timeline']=new Chart(ctx.getContext('2d'),{type:'line',data:{labels:s.map(r=>new Date(r.week_of).toLocaleDateString('en',{month:'short',day:'numeric'})),datasets:[{label:'Energy',data:s.map(r=>r.energy_level),borderColor:'#C4A46C',backgroundColor:'transparent',tension:0.4,pointRadius:4,pointBackgroundColor:'#C4A46C'},{label:'Satisfaction',data:s.map(r=>r.satisfaction),borderColor:'#6B8F71',backgroundColor:'transparent',tension:0.4,pointRadius:4,pointBackgroundColor:'#6B8F71'},{label:'Stress',data:s.map(r=>r.stress_level),borderColor:'#C4654A',backgroundColor:'transparent',tension:0.4,pointRadius:4,pointBackgroundColor:'#C4654A',borderDash:[4,4]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},color:'#6B6560',boxWidth:12}}},scales:{x:{grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10}}},y:{min:1,max:5,grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10},stepSize:1}}}}});}
-function buildValenceDonut(moodRows){destroyChart('valence');const ctx=document.getElementById('chart-valence');if(!moodRows||!moodRows.filter(r=>r.primary_emotion).length){ctx.parentElement.innerHTML='<p style="font-size:13px;color:#A09688;padding:20px 0">No emotions logged yet.</p>';return;}const pos=moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='pos').length;const neg=moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='neg').length;const neu=moodRows.filter(r=>EMOTION_META[r.primary_emotion]?.valence==='neu').length;chartInstances['valence']=new Chart(ctx.getContext('2d'),{type:'doughnut',data:{labels:['Positive','Challenging','Neutral'],datasets:[{data:[pos,neg,neu],backgroundColor:['#6B8F71','#C4654A','#C4A46C'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},color:'#6B6560',boxWidth:12}}}}});}
-function buildMoodAvgBars(moodRows){const el=document.getElementById('mood-avg-bars');if(!moodRows||moodRows.length===0){el.innerHTML='<p style="font-size:13px;color:#A09688;padding:8px 0">No mood data yet.</p>';return;}const metrics=[{key:'energy_level',label:'Energy',color:'#C4A46C'},{key:'satisfaction',label:'Satisfaction',color:'#6B8F71'},{key:'stress_level',label:'Stress',color:'#C4654A'}];let h='';metrics.forEach(({key,label,color})=>{const vals=moodRows.map(r=>r[key]).filter(v=>v);const avg=vals.length?vals.reduce((s,v)=>s+v,0)/vals.length:0;h+='<div class="impact-bar-row"><div style="font-family:-apple-system,sans-serif;font-size:11px;color:#6B6560;min-width:80px">'+label+'</div><div class="impact-bar-track"><div class="impact-bar-fill" style="width:'+Math.round(avg/5*100)+'%;background:'+color+'"></div></div><div style="font-family:\'SF Mono\',monospace;font-size:11px;color:'+color+';font-weight:600;min-width:28px;text-align:right">'+avg.toFixed(1)+'</div></div>';});el.innerHTML=h;}
+function buildEmotionFrequency(moodRows){const el=document.getElementById('emotion-freq');if(!moodRows||!moodRows.length){el.innerHTML='<p style="font-size:13px;color:#A09688;padding:8px 0">No mood entries yet.</p>';return;}const c={};moodRows.forEach(r=>{if(r.primary_emotion)c[r.primary_emotion]=(c[r.primary_emotion]||0)+1;});if(!Object.keys(c).length){el.innerHTML='<p style="font-size:13px;color:#A09688;padding:8px 0">No emotions logged yet.</p>';return;}const sorted=Object.entries(c).sort((a,b)=>b[1]-a[1]);const max=sorted[0][1];const VC={pos:'#6B8F71',neg:'#C4654A',neu:'#C4A46C'};let h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">';sorted.forEach(([em,cnt])=>{const meta=EMOTION_META[em]||{emoji:'?',valence:'neu'};h+='<div class="emotion-freq-row"><div class="emotion-freq-emoji">'+meta.emoji+'</div><div class="emotion-freq-label">'+em+'</div><div class="emotion-freq-track"><div class="emotion-freq-fill" style="width:'+Math.round(cnt/max*100)+'%;background:'+VC[meta.valence]+'"></div></div><div class="emotion-freq-count">'+cnt+'</div></div>';});h+='</div>';el.innerHTML=h;}
+function buildMoodTimeline(moodRows){destroyChart('mood-timeline');const ctx=document.getElementById('chart-mood-timeline');if(!moodRows||!moodRows.length){ctx.parentElement.innerHTML='<p style="font-size:13px;color:#A09688;padding:20px 0">No mood data yet.</p>';return;}const s=[...moodRows].sort((a,b)=>a.week_of.localeCompare(b.week_of));chartInstances['mood-timeline']=new Chart(ctx.getContext('2d'),{type:'line',data:{labels:s.map(r=>new Date(r.week_of).toLocaleDateString('en',{month:'short',day:'numeric'})),datasets:[{label:'Energy',data:s.map(r=>r.energy_level),borderColor:'#C4A46C',backgroundColor:'transparent',tension:0.4,pointRadius:4,pointBackgroundColor:'#C4A46C'},{label:'Satisfaction',data:s.map(r=>r.satisfaction),borderColor:'#6B8F71',backgroundColor:'transparent',tension:0.4,pointRadius:4,pointBackgroundColor:'#6B8F71'},{label:'Stress',data:s.map(r=>r.stress_level),borderColor:'#C4654A',backgroundColor:'transparent',tension:0.4,pointRadius:4,pointBackgroundColor:'#C4654A',borderDash:[4,4]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},color:'#6B6560',boxWidth:12}}},scales:{x:{grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10}}},y:{min:1,max:5,grid:{color:'#EDE8E0'},ticks:{color:'#A09688',font:{size:10},stepSize:1}}}}});}
 
-// ── Mood tab ──────────────────────────────────────────────
-function initMoodSliders() {
+// ── Mood ───────────────────────────────────────────────────
+function bindMoodSliders() {
   [{id:'slider-energy',valId:'val-energy',descId:'desc-energy',descs:ENERGY_DESCS},{id:'slider-satisfaction',valId:'val-satisfaction',descId:'desc-satisfaction',descs:SATISFACTION_DESCS},{id:'slider-stress',valId:'val-stress',descId:'desc-stress',descs:STRESS_DESCS}].forEach(({id,valId,descId,descs})=>{
     const el=document.getElementById(id);if(!el)return;
     const update=()=>{const v=parseInt(el.value);document.getElementById(valId).textContent=v;document.getElementById(descId).textContent=descs[v];el.style.setProperty('--pct',((v-1)/4*100)+'%');};
@@ -901,34 +917,37 @@ function initMoodSliders() {
   });
   const today=new Date(),monday=new Date(today);monday.setDate(today.getDate()-((today.getDay()+6)%7));
   document.getElementById('mood-week').value=monday.toISOString().split('T')[0];
-  document.getElementById('mood-submit-btn').addEventListener('click',submitMood);
 }
 
-function selectEmotion(btn) {
-  document.querySelectorAll('.emotion-btn').forEach(b=>b.classList.remove('selected'));
-  if(selectedEmotion===btn.dataset.emotion){selectedEmotion=null;}else{btn.classList.add('selected');selectedEmotion=btn.dataset.emotion;}
+function bindMoodEmotions() {
+  document.querySelectorAll('.emotion-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (selectedEmotion === btn.dataset.emotion) { btn.classList.remove('selected'); selectedEmotion = null; }
+      else { document.querySelectorAll('.emotion-btn').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); selectedEmotion = btn.dataset.emotion; }
+    });
+  });
 }
 
 async function submitMood() {
-  const weekOf=document.getElementById('mood-week').value;
-  if(!weekOf)return showToast('Please select a week');
-  const btn=document.getElementById('mood-submit-btn');btn.disabled=true;
-  document.getElementById('mood-loading').style.display='flex';document.getElementById('mood-result').innerHTML='';
+  const weekOf = document.getElementById('mood-week').value;
+  if (!weekOf) return showToast('Please select a week');
+  const btn = document.getElementById('mood-submit-btn');
+  btn.disabled = true; document.getElementById('mood-loading').style.display='flex'; document.getElementById('mood-result').innerHTML='';
   try {
-    await sbFetch('weekly_mood',{method:'POST',headers:{'Prefer':'return=representation,resolution=merge-duplicates'},body:JSON.stringify({user_id:USER_ID,week_of:weekOf,energy_level:parseInt(document.getElementById('slider-energy').value),satisfaction:parseInt(document.getElementById('slider-satisfaction').value),stress_level:parseInt(document.getElementById('slider-stress').value),primary_emotion:selectedEmotion,highlight:document.getElementById('mood-highlight').value.trim(),lowlight:document.getElementById('mood-lowlight').value.trim(),notes:document.getElementById('mood-notes').value.trim()})});
+    await sbFetch('weekly_mood', { method:'POST', headers:{'Prefer':'return=representation,resolution=merge-duplicates'}, body: JSON.stringify({ user_id: currentUser.id, week_of: weekOf, energy_level: parseInt(document.getElementById('slider-energy').value), satisfaction: parseInt(document.getElementById('slider-satisfaction').value), stress_level: parseInt(document.getElementById('slider-stress').value), primary_emotion: selectedEmotion, highlight: document.getElementById('mood-highlight').value.trim(), lowlight: document.getElementById('mood-lowlight').value.trim(), notes: document.getElementById('mood-notes').value.trim() }) });
     document.getElementById('mood-loading').style.display='none';
-    document.getElementById('mood-result').innerHTML='<div class="success-banner">✓ Mood entry saved for week of '+weekOf+'</div>';
-    document.getElementById('mood-highlight').value='';document.getElementById('mood-lowlight').value='';document.getElementById('mood-notes').value='';
-    document.querySelectorAll('.emotion-btn').forEach(b=>b.classList.remove('selected'));selectedEmotion=null;
-    loadMoodHistory();showToast('Mood saved!');
+    document.getElementById('mood-result').innerHTML='<div class="success-banner">✓ Mood saved for week of '+weekOf+'</div>';
+    document.getElementById('mood-highlight').value=''; document.getElementById('mood-lowlight').value=''; document.getElementById('mood-notes').value='';
+    document.querySelectorAll('.emotion-btn').forEach(b=>b.classList.remove('selected')); selectedEmotion=null;
+    loadMoodHistory(); showToast('Mood saved!');
   } catch(err){document.getElementById('mood-loading').style.display='none';document.getElementById('mood-result').innerHTML='<div class="error-banner">Error: '+err.message+'</div>';}
   btn.disabled=false;
 }
 
 async function loadMoodHistory() {
-  const el=document.getElementById('mood-history-list');el.innerHTML='';document.getElementById('mood-history-loading').style.display='flex';
+  const el=document.getElementById('mood-history-list'); el.innerHTML=''; document.getElementById('mood-history-loading').style.display='flex';
   try {
-    const rows=await sbFetch('weekly_mood?user_id=eq.'+USER_ID+'&order=week_of.desc&limit=12');
+    const rows=await sbFetch('weekly_mood?user_id=eq.'+currentUser.id+'&order=week_of.desc&limit=12');
     document.getElementById('mood-history-loading').style.display='none';
     if(!rows||rows.length===0){el.innerHTML='<div class="empty-state"><i class="ti ti-mood-smile"></i>No mood entries yet.</div>';return;}
     rows.forEach(r=>{
@@ -936,119 +955,64 @@ async function loadMoodHistory() {
       const mkDots=v=>{let d='';for(let i=1;i<=5;i++)d+='<div class="mood-dot'+(i<=v?' on':'')+'"></div>';return'<div class="mood-dots">'+d+'</div>';};
       const wl=new Date(r.week_of).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});
       const eb=r.primary_emotion&&EMOTION_META[r.primary_emotion]?'<span style="font-family:-apple-system,sans-serif;font-size:11px;padding:3px 10px;background:#FAEAE6;color:#C4654A;border-radius:20px;white-space:nowrap">'+EMOTION_META[r.primary_emotion].emoji+' '+r.primary_emotion+'</span>':'';
-      card.innerHTML='<div class="mood-history-head"><div><div class="mood-history-week">Week of '+wl+'</div>'+(r.highlight?'<div class="mood-history-title">'+(r.highlight.length>80?r.highlight.slice(0,80)+'…':r.highlight)+'</div>':'')+'</div>'+eb+'</div><div class="mood-history-body"><div class="mood-metric"><span class="mood-metric-val">'+r.energy_level+'</span>'+mkDots(r.energy_level)+'<div class="mood-metric-label">Energy</div></div><div class="mood-metric"><span class="mood-metric-val">'+r.satisfaction+'</span>'+mkDots(r.satisfaction)+'<div class="mood-metric-label">Satisfaction</div></div><div class="mood-metric"><span class="mood-metric-val">'+r.stress_level+'</span>'+mkDots(r.stress_level)+'<div class="mood-metric-label">Stress</div></div></div>'+(r.lowlight?'<div style="padding:0 18px 12px;font-size:12px;color:#8A8178;font-family:-apple-system,sans-serif">↓ '+(r.lowlight.length>100?r.lowlight.slice(0,100)+'…':r.lowlight)+'</div>':'');
+      card.innerHTML='<div class="mood-history-head"><div><div class="mood-history-week">Week of '+wl+'</div>'+(r.highlight?'<div class="mood-history-title">'+(r.highlight.length>80?r.highlight.slice(0,80)+'…':r.highlight)+'</div>':'')+'</div>'+eb+'</div><div class="mood-history-body"><div class="mood-metric"><span class="mood-metric-val">'+r.energy_level+'</span>'+mkDots(r.energy_level)+'<div class="mood-metric-label">Energy</div></div><div class="mood-metric"><span class="mood-metric-val">'+r.satisfaction+'</span>'+mkDots(r.satisfaction)+'<div class="mood-metric-label">Satisfaction</div></div><div class="mood-metric"><span class="mood-metric-val">'+r.stress_level+'</span>'+mkDots(r.stress_level)+'<div class="mood-metric-label">Stress</div></div></div>';
       el.appendChild(card);
     });
   } catch(err){document.getElementById('mood-history-loading').style.display='none';el.innerHTML='<div class="empty-state">Error: '+err.message+'</div>';}
 }
 
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-
-
-// ── Career Ladder ─────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', function() {
+// ── Ladder ─────────────────────────────────────────────────
+function bindLadder() {
   document.getElementById('ladder-btn').addEventListener('click', buildLadder);
-  document.getElementById('ladder-input').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') buildLadder();
+  document.getElementById('ladder-input').addEventListener('keydown', e => { if(e.key==='Enter') buildLadder(); });
+  document.querySelectorAll('.ladder-example').forEach(el => {
+    el.addEventListener('click', () => { document.getElementById('ladder-input').value=el.textContent; buildLadder(); });
   });
-  document.querySelectorAll('.ladder-example').forEach(function(el) {
-    el.addEventListener('click', function() {
-      document.getElementById('ladder-input').value = el.textContent;
-      buildLadder();
-    });
-  });
-});
-
-async function forceRefreshLadder() {
-  var jobTitle = document.getElementById('ladder-input').value.trim();
-  if (!jobTitle) return;
-  await buildLadder(true);
 }
 
 async function buildLadder(forceRefresh) {
-  var jobTitle = document.getElementById('ladder-input').value.trim();
-  if (!jobTitle) { showToast('Please enter your job title'); return; }
-  var btn = document.getElementById('ladder-btn');
-  var el  = document.getElementById('ladder-content');
-  btn.disabled = true;
-  el.innerHTML = '';
-  document.getElementById('ladder-loading').style.display = 'flex';
+  const jobTitle=document.getElementById('ladder-input').value.trim();
+  if(!jobTitle){showToast('Please enter your job title');return;}
+  const btn=document.getElementById('ladder-btn'),el=document.getElementById('ladder-content');
+  btn.disabled=true;el.innerHTML='';document.getElementById('ladder-loading').style.display='flex';
   try {
-    var res = await fetch('/api/career-ladder', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jobTitle: jobTitle, forceRefresh: !!forceRefresh })
-    });
-    if (!res.ok) {
-      var err = await res.json();
-      throw new Error(err.error || 'Server error ' + res.status);
-    }
-    var data = await res.json();
-    document.getElementById('ladder-loading').style.display = 'none';
+    const res=await fetch('/api/career-ladder',{method:'POST',headers:authHeaders(),body:JSON.stringify({jobTitle,forceRefresh:!!forceRefresh})});
+    if(!res.ok){const e=await res.json();throw new Error(e.error||'Server error '+res.status);}
+    const data=await res.json();
+    document.getElementById('ladder-loading').style.display='none';
     renderLadder(data);
-  } catch(err) {
-    document.getElementById('ladder-loading').style.display = 'none';
-    el.innerHTML = '<div class="error-banner">Error: ' + err.message + '</div>';
-  }
-  btn.disabled = false;
+  } catch(err){document.getElementById('ladder-loading').style.display='none';el.innerHTML='<div class="error-banner">Error: '+err.message+'</div>';}
+  btn.disabled=false;
 }
 
 function renderLadder(data) {
-  var el = document.getElementById('ladder-content');
-  var twoTracks = data.tracks && data.tracks.length > 1;
-
-  var tracksHtml = (data.tracks || []).map(function(track) {
-    var reversed = track.levels.slice().reverse();
-    var currentIdx = reversed.findIndex(function(l) { return l.is_current; });
-
-    var levelsHtml = reversed.map(function(level, idx) {
-      var isCurrent = level.is_current;
-      var isAbove   = currentIdx >= 0 && idx < currentIdx;
-      var dotClass  = isCurrent ? 'is-current' : isAbove ? 'is-above' : '';
-      var skillsHtml = (level.key_skills || []).map(function(s) {
-        return '<span class="lvl-skill ' + (isCurrent ? 'sk-current' : 'sk-other') + '">' + s + '</span>';
-      }).join('');
-
-      return '<div class="ladder-level">' +
-        '<div class="level-dot-col"><div class="lvl-dot ' + dotClass + '">' + level.rank + '</div>' +
-        '<div class="ladder-level-line"></div></div>' +
-        '<div class="level-body-col">' +
-        (isCurrent ? '<div class="lvl-badge">&#x1F4CD; YOU ARE HERE</div>' : '') +
-        '<div class="lvl-title ' + (isCurrent ? 'is-current' : isAbove ? 'is-above' : '') + '">' + level.title + '</div>' +
-        '<div class="lvl-years">' + level.years_typical + ' years typical</div>' +
-        '<div class="lvl-desc">' + level.description + '</div>' +
-        '<div class="lvl-skills">' + skillsHtml + '</div>' +
-        (!isCurrent && !isAbove && level.promotion_criteria ? '<div class="lvl-promo">&rarr; ' + level.promotion_criteria + '</div>' : '') +
-        '</div></div>';
+  const el=document.getElementById('ladder-content');
+  const twoTracks=data.tracks&&data.tracks.length>1;
+  const tracksHtml=(data.tracks||[]).map(track=>{
+    const reversed=track.levels.slice().reverse();
+    const currentIdx=reversed.findIndex(l=>l.is_current);
+    const levelsHtml=reversed.map((level,idx)=>{
+      const isCurrent=level.is_current,isAbove=currentIdx>=0&&idx<currentIdx;
+      const dotClass=isCurrent?'is-current':isAbove?'is-above':'';
+      const skillsHtml=(level.key_skills||[]).map(s=>'<span class="lvl-skill '+(isCurrent?'sk-current':'sk-other')+'">'+s+'</span>').join('');
+      return '<div class="ladder-level"><div class="level-dot-col"><div class="lvl-dot '+dotClass+'">'+level.rank+'</div><div class="ladder-level-line"></div></div><div class="level-body-col">'+(isCurrent?'<div class="lvl-badge">📍 YOU ARE HERE</div>':'')+'<div class="lvl-title '+(isCurrent?'is-current':isAbove?'is-above':'')+'">'+level.title+'</div><div class="lvl-years">'+level.years_typical+' years typical</div><div class="lvl-desc">'+level.description+'</div><div class="lvl-skills">'+skillsHtml+'</div>'+(!isCurrent&&!isAbove&&level.promotion_criteria?'<div class="lvl-promo">→ '+level.promotion_criteria+'</div>':'')+'</div></div>';
     }).join('');
-
-    return '<div class="track-card">' +
-      '<div class="track-head"><div class="track-name">' + track.name + '</div>' +
-      '<div class="track-desc-text">' + track.description + '</div></div>' +
-      '<div class="ladder-levels">' + levelsHtml + '</div></div>';
+    return '<div class="track-card"><div class="track-head"><div class="track-name">'+track.name+'</div><div class="track-desc-text">'+track.description+'</div></div><div class="ladder-levels">'+levelsHtml+'</div></div>';
   }).join('');
-
-  var iconList = ['ti-bulb','ti-alert-triangle','ti-rocket'];
-  var insightsHtml = (data.insights || []).map(function(tip, i) {
-    return '<div class="ladder-insight-row"><i class="ti ' + (iconList[i] || 'ti-star') + '"></i>' + tip + '</div>';
-  }).join('');
-
-  var cacheBadge = data.cached
-    ? '<span style="font-family:monospace;font-size:9px;padding:2px 8px;background:#EAF3DE;color:#3B6D11;border-radius:4px;margin-left:8px;vertical-align:middle">CACHED</span>'
-    : '<span style="font-family:monospace;font-size:9px;padding:2px 8px;background:#E6F1FB;color:#185FA5;border-radius:4px;margin-left:8px;vertical-align:middle">FRESH</span>';
-
-  var refreshBtn = '<button onclick="forceRefreshLadder()" style="font-family:-apple-system,sans-serif;font-size:11px;color:#A09688;background:none;border:none;cursor:pointer;padding:0;margin-top:6px;display:block">&#x21BB; Refresh ladder</button>';
-
-  el.innerHTML =
-    '<div class="ladder-meta">' +
-    '<div class="ladder-profession">' + data.profession + ' <em>ladder</em>' + cacheBadge + '</div>' +
-    '<div class="ladder-industry-tag">' + data.industry + '</div>' +
-    '<div class="ladder-desc">' + data.description + '</div>' +
-    refreshBtn + '</div>' +
-    '<div class="tracks-wrap ' + (twoTracks ? 'tracks-two' : '') + '">' + tracksHtml + '</div>' +
-    (insightsHtml ? '<div class="ladder-insights-box"><div class="chart-title" style="margin-bottom:10px">Insights for your stage</div>' + insightsHtml + '</div>' : '');
+  const cacheBadge=data.cached?'<span style="font-family:monospace;font-size:9px;padding:2px 8px;background:#EAF3DE;color:#3B6D11;border-radius:4px;margin-left:8px">CACHED</span>':'<span style="font-family:monospace;font-size:9px;padding:2px 8px;background:#E6F1FB;color:#185FA5;border-radius:4px;margin-left:8px">FRESH</span>';
+  const insightsHtml=(data.insights||[]).map((tip,i)=>'<div class="ladder-insight-row"><i class="ti '+(['ti-bulb','ti-alert-triangle','ti-rocket'][i]||'ti-star')+'"></i>'+tip+'</div>').join('');
+  el.innerHTML='<div class="ladder-meta"><div class="ladder-profession">'+data.profession+' <em>ladder</em>'+cacheBadge+'</div><div class="ladder-industry-tag">'+data.industry+'</div><div class="ladder-desc">'+data.description+'</div><button onclick="buildLadder(true)" style="font-family:-apple-system,sans-serif;font-size:11px;color:#A09688;background:none;border:none;cursor:pointer;padding:0;margin-top:6px;display:block">↻ Refresh ladder</button></div>'+'<div class="tracks-wrap '+(twoTracks?'tracks-two':'')+'">'+tracksHtml+'</div>'+(insightsHtml?'<div class="ladder-insights-box"><div class="chart-title" style="margin-bottom:10px">Insights for your stage</div>'+insightsHtml+'</div>':'');
 }
 
+// ── Utils ──────────────────────────────────────────────────
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+
+// Enter key support on auth forms
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('signin-password').addEventListener('keydown',e=>{if(e.key==='Enter')signIn();});
+  document.getElementById('signin-email').addEventListener('keydown',e=>{if(e.key==='Enter')signIn();});
+  document.getElementById('signup-confirm').addEventListener('keydown',e=>{if(e.key==='Enter')signUp();});
+});
 </script>
 </body>
 </html>
