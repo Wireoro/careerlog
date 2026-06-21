@@ -5,7 +5,86 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CareerLog</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
+// ── Goal picker ────────────────────────────────────────────
+const GOAL_LABELS = {
+  get_promoted:  { label: 'Get Promoted',   emoji: '🏆', color: '#854F0B', bg: '#FAEEDA' },
+  get_raise:     { label: 'Get a Raise',    emoji: '💰', color: '#3B6D11', bg: '#EAF3DE' },
+  land_new_job:  { label: 'Land a New Job', emoji: '🚀', color: '#185FA5', bg: '#E6F1FB' },
+};
+
+let selectedGoal = null;
+
+function selectGoal(btn) {
+  document.querySelectorAll('.goal-option').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedGoal = btn.dataset.goal;
+  document.getElementById('goal-save-btn').disabled = false;
+}
+
+async function checkAndLoadGoal() {
+  try {
+    const token = currentSession?.access_token || '';
+    const res = await fetch(SUPABASE_URL + '/rest/v1/user_goals?user_id=eq.' + currentUser.id + '&limit=1', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Prefer': 'return=representation' }
+    });
+    const rows = await res.json();
+    if (rows && rows.length > 0) {
+      updateGoalBadge(rows[0].goal);
+      return true;
+    }
+    return false;
+  } catch(e) { return false; }
+}
+
+function updateGoalBadge(goal) {
+  const meta = GOAL_LABELS[goal];
+  if (!meta) return;
+  const badge = document.getElementById('goal-badge');
+  badge.textContent = meta.emoji + ' ' + meta.label;
+  badge.style.background = meta.bg;
+  badge.style.color = meta.color;
+  badge.style.display = 'block';
+}
+
+function showGoalPicker() {
+  // Allow user to change goal from sidebar
+  document.getElementById('app-shell').classList.add('hidden');
+  document.getElementById('goal-screen').classList.remove('hidden');
+  // Reset selection
+  document.querySelectorAll('.goal-option').forEach(b => b.classList.remove('selected'));
+  selectedGoal = null;
+  document.getElementById('goal-save-btn').disabled = true;
+}
+
+async function saveGoal() {
+  if (!selectedGoal) return;
+  const btn = document.getElementById('goal-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  try {
+    const token = currentSession?.access_token || '';
+    await fetch(SUPABASE_URL + '/rest/v1/user_goals', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify({ user_id: currentUser.id, goal: selectedGoal, updated_at: new Date().toISOString() }),
+    });
+    updateGoalBadge(selectedGoal);
+    document.getElementById('goal-screen').classList.add('hidden');
+    document.getElementById('app-shell').classList.remove('hidden');
+    initApp();
+  } catch(err) {
+    btn.disabled = false;
+    btn.textContent = 'Start logging my career →';
+    alert('Error saving goal: ' + err.message);
+  }
+}
+
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -289,6 +368,31 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
   .chart-card.full{grid-column:auto}
   .emotion-grid{grid-template-columns:repeat(4,1fr)}
 }
+
+/* ── Goal picker ─────────────────────────────────────────── */
+#goal-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+#goal-screen.hidden{display:none}
+.goal-card{background:#fff;border:1px solid #EDE8E0;border-radius:16px;padding:40px;width:100%;max-width:480px}
+.goal-title{font-size:24px;font-weight:400;color:#2C2520;margin-bottom:6px}
+.goal-title em{font-style:italic;color:#C4654A}
+.goal-subtitle{font-family:-apple-system,sans-serif;font-size:14px;color:#8A8178;margin-bottom:32px;line-height:1.5}
+.goal-options{display:flex;flex-direction:column;gap:12px;margin-bottom:28px}
+.goal-option{display:flex;align-items:center;gap:16px;padding:18px 20px;border:1.5px solid #EDE8E0;border-radius:12px;background:#FAF7F2;cursor:pointer;transition:all 0.15s;text-align:left;width:100%}
+.goal-option:hover{border-color:#C4654A;background:#fff}
+.goal-option.selected{border-color:#C4654A;background:#FAEAE6}
+.goal-option-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;transition:all 0.15s}
+.goal-option.selected .goal-option-icon{background:#C4654A}
+.goal-option-body{flex:1}
+.goal-option-title{font-size:16px;font-weight:400;color:#2C2520;margin-bottom:2px}
+.goal-option.selected .goal-option-title{color:#C4654A}
+.goal-option-desc{font-family:-apple-system,sans-serif;font-size:12px;color:#A09688;line-height:1.4}
+.goal-check{width:20px;height:20px;border-radius:50%;border:1.5px solid #EDE8E0;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.goal-option.selected .goal-check{border-color:#C4654A;background:#C4654A}
+.goal-option.selected .goal-check::after{content:'';width:6px;height:6px;border-radius:50%;background:#fff}
+.goal-save-btn{width:100%;padding:14px;background:#2C2520;color:#FAF7F2;border:none;border-radius:8px;font-family:'Iowan Old Style',Palatino,Georgia,serif;font-size:16px;font-style:italic;cursor:pointer;transition:opacity 0.15s}
+.goal-save-btn:hover{opacity:0.82}
+.goal-save-btn:disabled{opacity:0.4;cursor:not-allowed}
+
 </style>
 </head>
 <body>
@@ -340,12 +444,55 @@ textarea{min-height:110px;resize:vertical;line-height:1.6}
   </div>
 </div>
 
+
+<!-- ── GOAL PICKER ─────────────────────────────────────────── -->
+<div id="goal-screen" class="hidden">
+  <div class="goal-card">
+    <div class="goal-title">What's your <em>goal?</em></div>
+    <div class="goal-subtitle sans">This helps CareerLog focus your journal prompts and insights on what matters most to you right now.</div>
+
+    <div class="goal-options">
+      <button class="goal-option" data-goal="get_promoted" onclick="selectGoal(this)">
+        <div class="goal-option-icon" style="background:#FAEEDA">🏆</div>
+        <div class="goal-option-body">
+          <div class="goal-option-title">Get Promoted</div>
+          <div class="goal-option-desc">Build the evidence and track record to earn your next level</div>
+        </div>
+        <div class="goal-check"></div>
+      </button>
+
+      <button class="goal-option" data-goal="get_raise" onclick="selectGoal(this)">
+        <div class="goal-option-icon" style="background:#EAF3DE">💰</div>
+        <div class="goal-option-body">
+          <div class="goal-option-title">Get a Raise</div>
+          <div class="goal-option-desc">Document your impact and build a compelling compensation case</div>
+        </div>
+        <div class="goal-check"></div>
+      </button>
+
+      <button class="goal-option" data-goal="land_new_job" onclick="selectGoal(this)">
+        <div class="goal-option-icon" style="background:#E6F1FB">🚀</div>
+        <div class="goal-option-body">
+          <div class="goal-option-title">Land a New Job</div>
+          <div class="goal-option-desc">Build interview stories and a track record that stands out</div>
+        </div>
+        <div class="goal-check"></div>
+      </button>
+    </div>
+
+    <button class="goal-save-btn" id="goal-save-btn" onclick="saveGoal()" disabled>
+      Start logging my career →
+    </button>
+  </div>
+</div>
+
 <!-- ── APP SHELL ─────────────────────────────────────────── -->
 <div id="app-shell" class="hidden">
   <nav class="sidebar">
     <div>
       <div class="logo"><h1>Career<em>Log</em></h1></div>
       <div class="logo-sub">your track record</div>
+      <div id="goal-badge" style="display:none;margin:4px 8px 0;padding:4px 10px;border-radius:20px;font-family:-apple-system,sans-serif;font-size:11px;background:#FAEAE6;color:#C4654A;cursor:pointer" onclick="showGoalPicker()"></div>
     </div>
     <ul class="nav-links">
       <li><button class="nav-btn active" data-tab="write"><i class="ti ti-edit"></i> Write</button></li>
@@ -617,16 +764,26 @@ async function signOut() {
 }
 
 // Watch auth state
-sb.auth.onAuthStateChange((event, session) => {
+sb.auth.onAuthStateChange(async (event, session) => {
   currentSession = session;
   currentUser = session?.user || null;
   if (currentUser) {
     document.getElementById('auth-screen').classList.add('hidden');
-    document.getElementById('app-shell').classList.remove('hidden');
     document.getElementById('user-email-display').textContent = currentUser.email;
-    initApp();
+    // Check if user has a goal set
+    const hasGoal = await checkAndLoadGoal();
+    if (!hasGoal) {
+      // New user — show goal picker
+      document.getElementById('goal-screen').classList.remove('hidden');
+      document.getElementById('app-shell').classList.add('hidden');
+    } else {
+      document.getElementById('goal-screen').classList.add('hidden');
+      document.getElementById('app-shell').classList.remove('hidden');
+      initApp();
+    }
   } else {
     document.getElementById('auth-screen').classList.remove('hidden');
+    document.getElementById('goal-screen').classList.add('hidden');
     document.getElementById('app-shell').classList.add('hidden');
   }
 });
